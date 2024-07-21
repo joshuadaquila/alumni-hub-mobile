@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "frontend",
+    "name": "UA Alumni Hub",
     "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/ua-icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/ua-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -16,12 +16,29 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/ua-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.xynyz.frontend",
+      "statusBar": {
+        "backgroundColor": "#ffffff", 
+        "barStyle": "light-content"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "build": {
+        "babel": {
+          "allowDangerZoneJS": true
+        }
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "12c5ac25-9b33-44f7-859e-01f45a0796d5"
+      }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }
