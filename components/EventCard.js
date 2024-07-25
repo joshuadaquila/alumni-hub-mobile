@@ -16,20 +16,6 @@ function EventCard(props) {
   const [token, setToken] = useState('');
   const [registered, setRegistered] = useState(false);
 
-  // useEffect(() => {
-  //   async function fetchToken() {
-  //     const storedToken = await SecureStore.getItemAsync('token');
-  //     setToken(storedToken);
-  //   }
-  //   fetchToken();
-  // }, []);
-
-  // useEffect(() => {
-  //   if (token) {
-  //     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  //   }
-  // }, [token]);
-
   useEffect(() => {
     api.get(`/checkEvent?eventid=${eventid}`)
       .then(response => {
@@ -120,10 +106,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: 'rgba(255, 165, 0, 0.2)',
     margin: 10,
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.8,
-    // shadowRadius: 2,
     elevation: 2,
     borderRadius: 10,
     overflow: 'hidden',
