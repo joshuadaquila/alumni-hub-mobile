@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TextInput, Button, Alert } from 'react-native';
-import axios from 'axios';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TextInput, Button, Alert, TouchableOpacity } from 'react-native';
+import io from 'socket.io-client';
 import moment from 'moment';
 import MessageCard from '../components/MessageCard';
 import * as SecureStore from 'expo-secure-store';
 import api from '../components/api/api';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+
+const SOCKET_URL = 'https://ua-alumhi-hub-be.onrender.com'; // Replace with your server URL
 
 function Message() {
   const [token, setToken] = useState();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
     async function getToken() {
@@ -21,9 +27,36 @@ function Message() {
   }, []);
 
   useEffect(() => {
+    const newSocket = io(SOCKET_URL, {
+      transports: ['websocket'],
+      query: { token }
+    });
+    setSocket(newSocket);
+
+    newSocket.on('connect', () => {
+      console.log('Connected to socket server');
+    });
+
+    newSocket.on('messageNotification', (message) => {
+      // console.log('Received message via socket:', message);
+      // Ensure message has all necessary fields before adding
+      if (message && message.messageid && message.name && message.email && message.photourl && message.content && message.date) {
+        setMessages(prevMessages => [message, ...prevMessages]);
+      } else {
+        console.error('Invalid message format:', message);
+      }
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [token]);
+
+  useEffect(() => {
     setLoading(true);
     api.get('/getMessages')
       .then(response => {
+        // console.log('Fetched messages:', response.data);
         setMessages(response.data);
         setLoading(false);
       })
@@ -35,6 +68,7 @@ function Message() {
   }, []);
 
   const handleSendMessage = () => {
+    setSending(true);
     if (newMessage.trim() === '') {
       Alert.alert('Error', 'Message cannot be empty');
       return;
@@ -47,25 +81,50 @@ function Message() {
 
     api.post('/addUserMessage', messageData)
       .then(response => {
-        setMessages([response.data, ...messages]);
+
+        // Send message to socket server with necessary fields
+        setSending(false);
+        socket.emit('messageNotification', response.data);
+        sendNotification(messageData.content)
         setNewMessage('');
       })
       .catch(error => {
         console.log("ERROR in AXIOS POST");
         console.error(error);
         Alert.alert('Error', 'Failed to send message');
-      });
+      })
   };
 
   const renderMessage = ({ item }) => (
     <MessageCard
       key={item.messageid ? item.messageid.toString() : 'default_key'}
-      username={item.name} // Use 'name' from backend
-      usertype={item.email} // Use 'email' from backend
+      username={item.name} // Ensure 'name' is present
+      usertype={item.email} // Ensure 'email' is present
       date={moment(item.date).format('YYYY-MM-DD HH:mm')}
       content={item.content}
+      photourl={item.photourl} // Ensure 'photourl' is present
+      id={item.messageid}
     />
   );
+
+  const sendNotification = (title) => {
+    const type = "message";
+    const message = `New Message: ${title}`;
+
+  
+    // Send the notification to the backend to store it
+    api.post('/addNotification', {
+      title,
+      message,
+      type
+    })
+    .then(response => {
+      console.log('Notification added successfully:', response.data);
+    })
+    .catch(error => {
+      console.error('Error adding notification:', error);
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -87,9 +146,13 @@ function Message() {
           style={styles.input}
           placeholder="Type your message..."
           value={newMessage}
+          multiline={true}
           onChangeText={setNewMessage}
         />
-        <Button title="Send" onPress={handleSendMessage} />
+        {/* <Button title="Send" onPress={handleSendMessage} /> */}
+        <TouchableOpacity onPress={handleSendMessage} style={styles.sendbtn} disabled={sending}>
+          <FontAwesomeIcon icon={faPaperPlane} color='white'/>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -102,6 +165,15 @@ const styles = StyleSheet.create({
   messagesContainer: {
     flex: 1,
     padding: 16,
+  },
+  sendbtn:{
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center', 
+    backgroundColor: '#1c1c1e',
+    height: 40,
+    width: 40,
+    borderRadius: 2,
   },
   noMessagesText: {
     fontSize: 18,

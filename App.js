@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import * as SecureStore from 'expo-secure-store';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Alert } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -18,6 +19,7 @@ function App() {
   const [uName, setUName] = useState(null);
   const [loginErr, setLoginErr] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(true);
 
   useEffect(() => {
     const loadToken = async () => {
@@ -35,7 +37,22 @@ function App() {
     loadToken();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected);
+      if (!state.isConnected) {
+        Alert.alert("No Network Connection", "Please check your internet connection and try again.");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   const login = async (email, password, navigation) => {
+    if (!isConnected) {
+      Alert.alert("No Network Connection", "Please check your internet connection and try again.");
+      return;
+    }
+    
     console.log("LOGGING IN");
     try {
       const response = await api.post('/signin', { email, password });

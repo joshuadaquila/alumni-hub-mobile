@@ -3,14 +3,17 @@ import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet } from 'reac
 import { LinearGradient } from 'expo-linear-gradient';
 import ualogo from '../resources/ualogo.jpg';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
+import { faExclamationCircle, faPen, faSignIn } from '@fortawesome/free-solid-svg-icons';
 import { ActivityIndicator } from 'react-native';
+import { faEye, faEyeSlash } from '@fortawesome/free-regular-svg-icons';
 
 const Login = ({ handleLogin, navigation, error }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState(null); // Local state for login error
   const [isLoading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [disabled, setDisabled] = useState(false);
 
   useEffect(() => {
     setLoginError(error); // Update local loginError state when error prop changes
@@ -23,16 +26,19 @@ const Login = ({ handleLogin, navigation, error }) => {
     }
 
     setLoading(true);
+    setDisabled(true);
     setLoginError(null); // Clear any previous errors
 
     try {
       await handleLogin(email, password);
       setLoading(false);
+      setDisabled(false);
       setLoginError(error);
     } catch (err) {
       console.log("Error during login:", err);
       setLoginError(err.response?.status || 'Unknown error');
       setLoading(false);
+      setDisabled(false);
     }
   };
 
@@ -60,15 +66,20 @@ const Login = ({ handleLogin, navigation, error }) => {
               keyboardType="email-address"
               returnKeyType="next"
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={password}
-              onChangeText={(text) => {setPassword(text); setLoginError(null)}}
-              secureTextEntry={true}
-              returnKeyType="done"
-            />
-            {loginError?
+            <View style={{position: 'relative'}}>
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                value={password}
+                onChangeText={(text) => {setPassword(text); setLoginError(null)}}
+                secureTextEntry={!passwordVisible}
+                returnKeyType="done"
+              />
+              <TouchableOpacity style={styles.eye} onPress={() => setPasswordVisible(!passwordVisible)}>
+                <FontAwesomeIcon icon={passwordVisible ? faEye : faEyeSlash} />
+              </TouchableOpacity>
+            </View>
+            {loginError ?
               <View style={styles.errorCon}> 
                 <FontAwesomeIcon icon={faExclamationCircle} color='red'/>
                 <Text style={styles.errorText}>{loginError}</Text> 
@@ -76,8 +87,13 @@ const Login = ({ handleLogin, navigation, error }) => {
               :  
               <Text style={styles.errorText} opacity={0}>Hidden</Text> 
             }
-            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-              {isLoading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Log in</Text>}
+            <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={disabled}>
+              {isLoading ? <ActivityIndicator color="#ffffff" /> : (
+                <>
+                  <FontAwesomeIcon icon={faSignIn} color='white' style={styles.icon} />
+                  <Text style={styles.buttonText}>Log in</Text>
+                </>
+              )}
             </TouchableOpacity>
 
             <View style={styles.orContainer}>
@@ -87,6 +103,7 @@ const Login = ({ handleLogin, navigation, error }) => {
             </View>
 
             <TouchableOpacity style={styles.button} onPress={() => { navigation.navigate('Signup'); }}>
+              <FontAwesomeIcon icon={faPen} color='white' style={styles.icon} />
               <Text style={styles.buttonText}>Sign Up</Text>
             </TouchableOpacity>
           </View>
@@ -141,10 +158,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row', // Set flex direction to row
+    marginBottom: 10,
   },
   buttonText: {
     fontSize: 16,
     color: '#fff',
+    marginLeft: 2, // Add margin to separate icon and text
   },
   orContainer: {
     flexDirection: 'row',
@@ -172,17 +192,20 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     padding: 5,
-    
   },
   linearGradient: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  signText: {
-    color: 'white',
-    fontSize: 16,
-  }
+  icon: {
+    marginRight: 2, // Add margin to separate icon and text
+  },
+  eye: {
+    position: 'absolute',
+    top: '25%',
+    right: '5%',
+  },
 });
 
 export default Login;

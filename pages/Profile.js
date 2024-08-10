@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Alert, ActivityIndicator, FlatList, Modal, Pressable } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome } from '@expo/vector-icons';
 import api from '../components/api/api'; // Ensure the API file exists and has the correct endpoint
 import FeedContainer from '../components/FeedCon';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faUpload, faEye  } from '@fortawesome/free-solid-svg-icons';
 
 function Profile() {
   const [token, setToken] = useState('');
@@ -16,6 +18,10 @@ function Profile() {
   const [profileImage, setProfileImage] = useState('https://via.placeholder.com/100'); // Initial profile image URL
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState(null); // Added state for notification
+  const [optionsVisible, setOptionsVisible] = useState(false); // State for options visibility
+  const [isModalVisible, setModalVisible] = useState(false); // State for modal visibility
+  const [uploading, setUploading] = useState(false);
+  const [job, setJob] = useState('')
 
   useEffect(() => {
     async function getToken() {
@@ -43,10 +49,22 @@ function Profile() {
   }, []);
 
   useEffect(() => {
-    console.log("feed is fetching")
+    // Fetch profile information from the server
+    api.get('/getJobInfo')
+      .then(response => {
+        console.log("JOBINFO", response);
+        setJob(response.data[0].presentoccupation);
+      })
+      .catch(error => {
+        console.log("ERROR IN GETTING JOB PROFILE");
+        console.error(error);
+      });
+  }, []);
+
+  useEffect(() => {
     api.get('/getMyFeed')
       .then(response => {
-        console.log(response.data)
+        // console.log(response.data);
         setFeed(response.data);
       })
       .catch(error => {
@@ -66,17 +84,62 @@ function Profile() {
   };
 
   const pickImage = async () => {
+    // console.log("PICKING IMAGE")
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
     });
-
-    if (!result.cancelled) {
-      setProfileImage(result.uri);
-      // You can also upload the selected image to the server here
+  
+    console.log("Image Picker Result:", result);
+  
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const { uri } = result.assets[0]; // Access the URI from the first asset
+      setProfileImage(uri);
+      setUploading(true);
+      setOptionsVisible(false);
+  
+      const formData = new FormData();
+      formData.append('photo', {
+        uri: uri,
+        name: 'profile.jpg',
+        type: 'image/jpeg',
+      });
+  
+      console.log('Photo:', {
+        uri: uri,
+        name: 'profile.jpg',
+        type: 'image/jpeg',
+      });
+  
+      try {
+        const response = await api.post('/uploadProfilePicture', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+  
+        if (response.status === 200) {
+          setNotification('Profile photo updated successfully');
+          setUploading(false)
+        } else {
+          setNotification('Failed to update profile photo');
+        }
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        setNotification('Failed to update profile photo');
+      }
+    } else {
+      console.error('No image selected or image URI is undefined.');
     }
+  };
+  
+  
+
+  const viewImage = () => {
+    setModalVisible(true);
   };
 
   const formatDate = (dateString) => {
@@ -88,7 +151,7 @@ function Profile() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#1c1c1e" />
       </View>
     );
   }
@@ -101,6 +164,37 @@ function Profile() {
     );
   }
 
+  const handleDeleteFeed = async (feedid) => {
+    // console.log('Attempting to delete feed with ID:', feedid);
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this post?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            try {
+              // Make a DELETE request to the API
+              await api.delete(`/deletePost/${feedid}`);
+              // Optionally, you can add additional code to handle successful deletion, like updating state or navigating away
+              Alert.alert('Post deleted successfully');
+              setFeed(feed.filter(item => item.feedid !== feedid));
+            } catch (error) {
+              console.error('Error deleting post:', error);
+              Alert.alert('Failed to delete post. Please try again.');
+            }
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const renderItem = ({ item }) => {
     return (
       <FeedContainer
@@ -111,34 +205,49 @@ function Profile() {
         photourl={item.photourl}
         username={item.name}
         profilepicurl={item.profilepic}
+        onDelete={handleDeleteFeed}
       />
     );
   };
 
-  console.log("feed", feed);
   return (
     <View style={styles.container}>
       <View style={styles.profileHeader}>
-        <TouchableOpacity
-          onPress={pickImage}
-          onPressIn={() => setShowIcon(true)}
-          onPressOut={() => setShowIcon(false)}
-        >
-          <Image 
-            source={{ uri: profileImage }}
-            style={styles.profileImage}
-          />
-          {showIcon && (
-            <View style={styles.iconContainer}>
-              <FontAwesome name="camera" size={24} color="#fff" />
-            </View>
-          )}
-        </TouchableOpacity>
+      <TouchableOpacity
+  onPress={() => setOptionsVisible(!optionsVisible)}
+  onPressIn={() => setShowIcon(true)}
+  onPressOut={() => setShowIcon(false)}
+>
+  <View style={styles.profileImageContainer}>
+    <Image 
+      source={{ uri: profileImage }}
+      style={styles.profileImage}
+    />
+    {uploading && (
+      <View style={styles.indicatorWrapper}>
+        <ActivityIndicator size="large" color="#1c1c1e" />
+      </View>
+    )}
+  </View>
+    </TouchableOpacity>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{data[0].name}</Text>
-          <Text style={styles.profileJob}>Programmer, {data[0].graduationyear}</Text>
+          <Text style={styles.profileJob}>{job? job : null }</Text>
+          <Text style={styles.profileJob}>Class {data[0].graduationyear}</Text>
         </View>
       </View>
+      {optionsVisible && (
+        <View style={styles.optionsContainer}>
+          <TouchableOpacity style={styles.optionButton} onPress={viewImage}>
+            <FontAwesomeIcon icon={faEye} />
+            <Text style={styles.optionText}>View Photo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.optionButton} onPress={pickImage}>
+            <FontAwesomeIcon icon={faUpload} />
+            <Text style={styles.optionText}>Upload Photo</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <TouchableOpacity style={styles.expandButton} onPress={toggleExpand}>
         <Text style={styles.expandButtonText}>{isExpanded ? 'Hide' : 'See More'}</Text>
       </TouchableOpacity>
@@ -158,11 +267,28 @@ function Profile() {
       </Animated.View>
 
       <FlatList
-          data={feed}
-          renderItem={renderItem}
-          keyExtractor={item => `feed-${item.feedid}`}
-          contentContainerStyle={styles.flatListContent}
-        />
+        data={feed}
+        renderItem={renderItem}
+        keyExtractor={item => `feed-${item.feedid}`}
+        contentContainerStyle={styles.flatListContent}
+      />
+
+      {/* Modal for viewing image */}
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable style={styles.modalBackground} onPress={() => setModalVisible(false)}>
+          <View style={styles.modalContent}>
+            <Image 
+              source={{ uri: profileImage }}
+              style={styles.fullscreenImage}
+            />
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -171,7 +297,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    // backgroundColor: '#f5f5f5',
+  },
+  profileImageContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   loadingContainer: {
     flex: 1,
@@ -213,6 +346,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#555',
   },
+  optionsContainer: {
+    position: 'absolute',
+    width: 150,
+    top: 100,
+    left: 5,
+    right: 0,
+    alignItems: 'center',
+    backgroundColor: 'white',
+    padding: 2,
+    borderRadius: 5,
+    zIndex: 1, // Ensures the options container is above other elements
+  },
+  optionButton: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'start',
+    borderRadius: 5,
+    marginVertical: 5,
+    width: '80%',
+    alignItems: 'center',
+  },
+  optionText: {
+    color: 'black',
+    fontSize: 14,
+    marginLeft: 10,
+  },
   expandButton: {
     padding: 10,
     backgroundColor: '#1c1c1e',
@@ -236,15 +396,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  icon: {
-    marginRight: 10,
-  },
   detailsText: {
     fontSize: 16,
     color: '#333',
   },
+  icon: {
+    marginRight: 8,
+  },
   flatListContent: {
-    flexGrow: 1,
+    paddingBottom: 16,
+  },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 1)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+  },
+  fullscreenImage: {
+    width: 400,
+    height: 400,
+    resizeMode: 'contain',
+  },
+  indicatorWrapper: {
+    position: 'absolute',
+    left: -8,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(100, 100, 100, 0.6)',
+    borderRadius: 50,
+    width: 100,
+    height: 100,
   },
 });
 

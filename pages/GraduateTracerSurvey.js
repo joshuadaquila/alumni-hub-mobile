@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, Alert, Button, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import Checkbox from 'react-native-checkbox';
 import * as ImagePicker from 'expo-image-picker';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faCamera, faImage, faX } from '@fortawesome/free-solid-svg-icons';
+import { faCalendarPlus, faCamera, faImage, faX } from '@fortawesome/free-solid-svg-icons';
 import api from '../components/api/api';
 import { ActivityIndicator } from 'react-native';
+import { useEffect } from 'react';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const chedLogo = require("../resources/ched-logo.png");
 const uaLogo = require('../resources/ualogo.jpg');
@@ -23,9 +25,52 @@ const GraduateTracerSurvey = () => {
   const [civilStat, setCivilStat] = useState('Single');
   const [sex, setSex] = useState('');
   const [birthday, setBirthday] = useState();
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [region, setRegion] = useState('Region 1');
   const [province, setProvince] = useState('');
   const [residence, setResidence] = useState('');
+
+  useEffect(() => {
+    // Fetch profile information from the server
+    api.get('/getAlumniInfo')
+      .then(response => {
+        const alumniInfo = response.data[0];
+  
+        setName(alumniInfo.name);
+        setPermanentAdd(alumniInfo.address);
+        setEmailAdd(alumniInfo.email);
+  
+        // Format the birthday to yyyy-mm-dd
+        const formattedBirthday = new Date(alumniInfo.birthday).toISOString().slice(0, 10);
+        setBirthday(formattedBirthday);
+  
+        // setLoading(false); // Set loading to false after data is fetched
+      })
+      .catch(error => {
+        console.log("ERROR IN GTS get alumni");
+        console.error(error);
+        // setLoading(false); // Set loading to false in case of error
+      });
+  }, []);
+  
+
+  const onChange = (event, selectedDate) => {
+    if (selectedDate) {
+      const currentDate = selectedDate;
+      const formattedDate = currentDate.toISOString().split('T')[0];
+      setShowDatePicker(false);
+      setBirthday(formattedDate);
+    }
+  };
+
+  const setAwardDate = (event, selectedDate) => {
+    if (selectedDate) {
+      const currentDate = selectedDate;
+      const formattedDate = currentDate.toISOString().split('T')[0];
+      setShowDatePicker(false);
+      setDate(formattedDate);
+    }
+  };
 
   // EDUCATIONAL BACKGROUND
   // Educ Attainment
@@ -271,6 +316,137 @@ const GraduateTracerSurvey = () => {
     setSelectedFiles(selectedFiles.filter(file => file.uri !== uri));
   };
 
+  const showAlert = () => {
+    Alert.alert(
+      "Success!",
+      "Your response has been saved.",
+      [
+        { text: "OK", onPress: () => console.log("OK Pressed") }
+      ],
+      { cancelable: false }
+    );
+  };
+  
+
+  const handleSubmitGenInfo = async () => {
+    console.log("Province", province);
+    console.log(name)
+    setIsLoading(true)
+    try {
+      const response = await api.post('/submitGeneralInfo', {
+        name, permanentAdd, email, contactNum, mobileNum, civilStat, sex, birthday, region, province, residence,
+      });
+  
+      if (response.status === 200) {
+        // Handle success, e.g., show a success message or redirect the user
+        console.log('Gen Info submitted successfully:', response.data);
+        showAlert();
+      } else {
+        // Handle unexpected status code
+        console.log('Unexpected response:', response);
+      }
+    } catch (error) {
+      // Handle errors, e.g., show an error message to the user
+      console.error('Error in GEN INFO submitting survey:', error);
+    }finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmitEducBack = async () => {
+    setIsLoading(true)
+    try {
+      const response = await api.post('/submitEducationalBackground', {
+        educationalAttain, professionalExams,  undergraduateReasons, graduateReasons
+      });
+  
+      if (response.status === 200) {
+        // Handle success, e.g., show a success message or redirect the user
+        console.log('Educ Back submitted successfully:', response.data);
+        showAlert();
+      } else {
+        // Handle unexpected status code
+        console.log('Unexpected response:', response);
+      }
+    } catch (error) {
+      // Handle errors, e.g., show an error message to the user
+      console.error('Error in EDUC BACK submitting survey:', error);
+    }finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmitTraining = async () => {
+    setIsLoading(true)
+    try {
+      const response = await api.post('/submitTraining', {
+        trainings, reasonAdvanceStud
+      });
+  
+      if (response.status === 200) {
+        // Handle success, e.g., show a success message or redirect the user
+        console.log('Training submitted successfully:', response.data);
+        showAlert();
+      } else {
+        // Handle unexpected status code
+        console.log('Unexpected response:', response);
+      }
+    } catch (error) {
+      // Handle errors, e.g., show an error message to the user
+      console.error('Error in training submitting survey:', error);
+    }finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmitEmployment = async () => {
+    console.log(presentOccupation)
+    setIsLoading(true)
+    try {
+      const response = await api.post('/submitEmploymentData', {
+        presentlyEmployed, reasonUnemployed, presentEmployStat, skillsAcquired, presentOccupation, majorLine, placeOfWork, firstJobAfterJob, 
+        reasonStayingJob, firstJobRelatedToCourse, reasonAcceptingJob, reasonChangingJob, durationFirstJob, howFindFirstJob, durationJobSeeking, firstJobLvl,
+        secondJobLvl, earning, curriculumRelevance, competencies, suggestion, 
+      });
+      
+      if (response.status === 200) {
+        // Handle success, e.g., show a success message or redirect the user
+        console.log('Training submitted successfully:', response.data);
+        showAlert();
+      } else {
+        // Handle unexpected status code
+        console.log('Unexpected response:', response);
+      }
+    } catch (error) {
+      // Handle errors, e.g., show an error message to the user
+      console.error('Error in training submitting survey:', error);
+    }finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmitContribution = async () => {
+    setIsLoading(true)
+    try {
+      const response = await api.post('/submitContributionProfile', {
+        awardName, awardBody, date, selectedFiles
+      });
+  
+      if (response.status === 200) {
+        // Handle success, e.g., show a success message or redirect the user
+        console.log('Training submitted successfully:', response.data);
+        showAlert();
+      } else {
+        // Handle unexpected status code
+        console.log('Unexpected response:', response);
+      }
+    } catch (error) {
+      // Handle errors, e.g., show an error message to the user
+      console.error('Error in training submitting survey:', error);
+    }finally {
+      setIsLoading(false);
+    }
+  };
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
@@ -341,7 +517,25 @@ const GraduateTracerSurvey = () => {
             <Picker.Item label="Female" value="female" />
           </Picker>
           <Text>Birthday</Text>
-          <TextInput style={styles.input} value={birthday} onChangeText={setBirthday} placeholder="YYYY-MM-DD" keyboardType="number-pad" />
+
+          {showDatePicker && (<DateTimePicker
+            testID="dateTimePicker"
+            value={new Date()}
+            // mode={mode}
+            is24Hour={true}
+            display="default"
+            onChange={onChange}
+          />)}
+          
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+            {console.log(birthday)}
+            <TextInput style={{width: '90%', backgroundColor: 'white', padding: 10, borderRadius: 5}} 
+              value={birthday} onChangeText={setBirthday} placeholder="YYYY-MM-DD" keyboardType="number-pad" />
+            <TouchableOpacity onPress={()=> setShowDatePicker(!showDatePicker)}>
+              <FontAwesomeIcon icon={faCalendarPlus} size={20} />
+            </TouchableOpacity>
+            
+          </View>
           <Text>Region of Origin</Text>
           <Picker style={styles.picker} selectedValue={region} onValueChange={setRegion}>
             {Array.from({ length: 12 }, (_, index) => (
@@ -358,13 +552,20 @@ const GraduateTracerSurvey = () => {
 
 
           </Picker>
+          {/* <Text>Province</Text>
+          <TextInput style={styles.input} placeholder="Province" value={province}  onChangeText={setProvince}/> */}
+
           <Text>Province</Text>
-          <TextInput style={styles.input} placeholder="Province" value={province}  onChange={setProvince}/>
+          <TextInput style={styles.input} placeholder="Province" value={province}  onChangeText={setProvince}/>
           <Text>Location of Residence</Text>
           <Picker style={styles.picker} selectedValue={residence} onValueChange={setResidence}>
             <Picker.Item label="City" value="city" />
             <Picker.Item label="Municipality" value="municipality" />
           </Picker>
+
+          <TouchableOpacity style={styles.button} onPress={handleSubmitGenInfo} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Submit</Text>}
+          </TouchableOpacity>
         </View>
       )}
 
@@ -624,6 +825,10 @@ const GraduateTracerSurvey = () => {
             />
             
           </View>
+
+          <TouchableOpacity style={styles.button} onPress={handleSubmitEducBack} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Submit</Text>}
+          </TouchableOpacity>
         </View>
       )}
       
@@ -667,6 +872,10 @@ const GraduateTracerSurvey = () => {
             <Picker.Item label="For promotion" value="For promotion" />
             <Picker.Item label="For professional development" value="For professional development" />
           </Picker>
+
+          <TouchableOpacity style={styles.button} onPress={handleSubmitTraining} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Submit</Text>}
+          </TouchableOpacity>
         </View>
       )}
       
@@ -707,7 +916,7 @@ const GraduateTracerSurvey = () => {
             <Text>If self-employed, what skills acquired in college were you able to apply in your work?</Text>
             <TextInput style={styles.input} value={skillsAcquired} onChangeText={setSkillsAcquired}/>
             <Text>Present occupation (Ex. Grade School Teacher, Electrical Engineer, Self-employed)</Text>
-            <TextInput style={styles.input} value={presentOccupation} onChange={setPresentOccupation} />
+            <TextInput style={styles.input} value={presentOccupation} onChangeText={setPresentOccupation} />
             <Text>Major line of business of the company you are presently employed in. Check one only.</Text>
             <Picker style={styles.picker} selectedValue={majorLine} onValueChange={setMajorLine}>
               <Picker.Item label="Agriculture, Hunting and Forestry" value="agriculture" />
@@ -863,6 +1072,10 @@ const GraduateTracerSurvey = () => {
           
           <Text>List down suggestions to further improve your course curriculum.</Text>
           <TextInput style={styles.input} value={suggestion} onChangeText={setSuggestion} />
+
+          <TouchableOpacity style={styles.button} onPress={handleSubmitEmployment} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Submit</Text>}
+          </TouchableOpacity>
         </View>
       )}
       
@@ -878,7 +1091,25 @@ const GraduateTracerSurvey = () => {
           <TextInput style={styles.input} value={awardBody} onChangeText={setAwardBody} />
 
           <Text>Date</Text>
-          <TextInput style={styles.input} value={date} onChangeText={setDate} />
+          {showDatePicker && (<DateTimePicker
+            testID="dateTimePicker"
+            value={new Date()}
+            // mode={mode}
+            is24Hour={true}
+            display="default"
+            onChange={setAwardDate}
+          />)}
+          
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10}}>
+            {console.log(date)}
+            {console.log("bday", birthday)}
+            <TextInput style={{width: '90%', backgroundColor: 'white', padding: 10, borderRadius: 5}} 
+              value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" keyboardType="number-pad" />
+            <TouchableOpacity onPress={()=> setShowDatePicker(!showDatePicker)}>
+              <FontAwesomeIcon icon={faCalendarPlus} size={20} />
+            </TouchableOpacity>
+            
+          </View>
 
           {/* <Text>Certificate</Text>
           <TouchableOpacity style={styles.fileButton} onPress={handleSelectImage}>
@@ -903,7 +1134,7 @@ const GraduateTracerSurvey = () => {
             ))}
           </View>
  */}
-          <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={isLoading}>
+          <TouchableOpacity style={styles.button} onPress={handleSubmitContribution} disabled={isLoading}>
             {isLoading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Submit</Text>}
           </TouchableOpacity>
         </View>

@@ -101,6 +101,7 @@ const Events = ({ navigation, handleTabPress }) => {
         description={event.description}
         date={event.date}
         time={event.time}
+        endtime ={event.endtime}
         location={event.location}
         capacity={event.capacity}
         registrationdeadline={event.registrationdeadline}

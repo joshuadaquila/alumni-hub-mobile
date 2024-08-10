@@ -106,7 +106,9 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: 'rgba(255, 165, 0, 0.2)',
     margin: 10,
-    elevation: 2,
+    // elevation: 2,
+    borderWidth: 1,
+    borderColor: 'white',
     borderRadius: 10,
     overflow: 'hidden',
     flexDirection: 'column',

@@ -1,8 +1,8 @@
 import { faBars, faBug, faInfo, faNoteSticky, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions, Image, BackHandler } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 import ualogo from '../resources/ualogo.jpg'; // Correctly import the local image
 import api, { logoutUser } from './api/api';
@@ -12,6 +12,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const { height } = Dimensions.get('window'); // Get screen height
   const translateX = useRef(new Animated.Value(-sidebarWidth)).current;
   const navigation = useNavigation();
+  const [isLoggedOut, setIsLoggedOut] = useState(false); // Track if user is logged out
 
   useEffect(() => {
     Animated.timing(translateX, {
@@ -21,6 +22,24 @@ const Sidebar = ({ isOpen, onClose }) => {
     }).start();
   }, [isOpen]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        if (isLoggedOut) {
+          BackHandler.exitApp(); // Close the app if logged out
+          return true; // Prevent default back button behavior
+        }
+        return false; // Allow default behavior otherwise
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      };
+    }, [isLoggedOut])
+  );
+
   const handleNavigation = (screen) => {
     onClose(); // Close the sidebar
     navigation.navigate(screen);
@@ -28,8 +47,9 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const logout = () => {
     logoutUser();
+    setIsLoggedOut(true); // Set logged out state to true
     handleNavigation('Login');
-  }
+  };
 
   return (
     <>
@@ -49,12 +69,12 @@ const Sidebar = ({ isOpen, onClose }) => {
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('ReportBug')}>
             <FontAwesomeIcon icon={faBug} color='white' size={20} />
-            <Text style={styles.sidebarText}>Report a bug</Text>
+            <Text style={styles.sidebarText}>Report a bug (Unavailable)</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('About')}>
             <FontAwesomeIcon icon={faInfo} color='white' size={20} />
-            <Text style={styles.sidebarText}>About</Text>
+            <Text style={styles.sidebarText}>About (Unavailable)</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => logout()}>

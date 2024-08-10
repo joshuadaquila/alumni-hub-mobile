@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, StyleSheet, Text, TextInput, Button, Alert, Image, TouchableOpacity, Animated, TouchableWithoutFeedback } from 'react-native';
+import { View, FlatList, StyleSheet, Text, TextInput, Button, Alert, Image, TouchableOpacity, Animated, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import * as ImagePicker from 'expo-image-picker';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPaperclip, faPen } from '@fortawesome/free-solid-svg-icons';
+import { faPaperclip } from '@fortawesome/free-solid-svg-icons';
 import api from '../components/api/api';
 import { storage } from '../components/api/firebase';  // Import Firebase storage
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';  // Firebase storage functions
 import FeedContainer from '../components/FeedCon';  // Import FeedContainer
+import io from 'socket.io-client';
 
 function Home({ navigation, handleLogout, handleTabPress }) {
-  const [profilepicurl, setProfilePicUrl] = useState('https://via.placeholder.com/50')
+  const [profilepicurl, setProfilePicUrl] = useState('https://via.placeholder.com/50');
   const [token, setToken] = useState('');
   const [feed, setFeed] = useState([]);
   const [notification, setNotification] = useState(null);
@@ -22,8 +23,10 @@ function Home({ navigation, handleLogout, handleTabPress }) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [containerHeight, setContainerHeight] = useState(new Animated.Value(0));
   const [containerOpacity, setContainerOpacity] = useState(new Animated.Value(0));
+  const [loading, setLoading] = useState(true); // Added loading state
+  const [socket, setSocket] = useState(null);
 
-  
+  const SOCKET_URL = 'https://ua-alumhi-hub-be.onrender.com'; // Replace with your server URL
 
   useEffect(() => {
     if (token) {
@@ -32,30 +35,70 @@ function Home({ navigation, handleLogout, handleTabPress }) {
   }, [token]);
 
   useEffect(() => {
-    // Fetch profile information from the server
-    api.get('/getAlumniInfo')
-      .then(response => {
-        // setData(response.data);
-        if (response.data && response.data[0] && response.data[0].photourl) {
-          setProfilePicUrl(response.data[0].photourl);
-        }
-      })
-      .catch(error => {
-        console.log("ERROR IN GETTING PROFILE");
-        console.error(error);
-      });
+    async function getToken() {
+      const token = await SecureStore.getItemAsync('token');
+      setToken(token);
+    }
+    getToken();
   }, []);
 
   useEffect(() => {
-    api.get('/getFeed')
-      .then(response => {
-        // console.log(response.data)
+    const newSocket = io(SOCKET_URL, {
+      transports: ['websocket'],
+      query: { token }
+    });
+    setSocket(newSocket);
+
+    newSocket.on('connect', () => {
+      console.log('Connected to socket server');
+    });
+
+    newSocket.on('messageNotification', (message) => {
+      // console.log('Received message via socket:', message);
+      // Ensure message has all necessary fields before adding
+      if (message && message.messageid && message.name && message.email && message.photourl && message.content && message.date) {
+        setMessages(prevMessages => [message, ...prevMessages]);
+      } else {
+        console.error('Invalid message format:', message);
+      }
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [token]);
+
+  useEffect(() => {
+    // Fetch profile information from the server
+    const fetchProfileInfo = async () => {
+      try {
+        const response = await api.get('/getAlumniInfo');
+        if (response.data && response.data[0] && response.data[0].photourl) {
+          setProfilePicUrl(response.data[0].photourl);
+        }
+      } catch (error) {
+        console.log("ERROR IN GETTING PROFILE");
+        console.error(error);
+      } finally {
+        setLoading(false); // Set loading to false after fetching profile info
+      }
+    };
+
+    fetchProfileInfo();
+  }, []);
+
+  useEffect(() => {
+    const fetchFeed = async () => {
+      try {
+        const response = await api.get('/getFeed');
         setFeed(response.data);
-      })
-      .catch(error => {
+      } catch (error) {
         console.log("Error fetching feed with api:", error);
         handleLogout();
-      });
+      }
+    };
+
+    fetchFeed();
   }, [notification]);
 
   const handleCreatePost = async () => {
@@ -115,6 +158,7 @@ function Home({ navigation, handleLogout, handleTabPress }) {
         },
       })
         .then(response => {
+          socket.emit('feedNotification', response.data);
           Alert.alert('Success', 'Post created successfully.');
           setNewPost('');
           setSelectedImages([]);
@@ -172,6 +216,37 @@ function Home({ navigation, handleLogout, handleTabPress }) {
     setIsCollapsed(!isCollapsed);
   };
 
+  const handleDeleteFeed = async (feedid) => {
+    console.log('Attempting to delete feed with ID:', feedid);
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this post?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: async () => {
+            try {
+              // Make a DELETE request to the API
+              await api.delete(`/deletePost/${feedid}`);
+              // Optionally, you can add additional code to handle successful deletion, like updating state or navigating away
+              Alert.alert('Post deleted successfully');
+              setFeed(feed.filter(item => item.feedid !== feedid));
+            } catch (error) {
+              console.error('Error deleting post:', error);
+              Alert.alert('Failed to delete post. Please try again.');
+            }
+          },
+          style: 'destructive',
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const renderItem = ({ item }) => {
     return (
       <FeedContainer
@@ -182,9 +257,18 @@ function Home({ navigation, handleLogout, handleTabPress }) {
         photourl={item.photourl}
         username={item.name}
         profilepicurl={item.profilepic}
+        onDelete={handleDeleteFeed}
       />
     );
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1c1c1e" />
+      </View>
+    );
+  }
 
   return (
     <LinearGradient
@@ -212,7 +296,7 @@ function Home({ navigation, handleLogout, handleTabPress }) {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.postInput}
-              placeholder="Engage to the community!"
+              placeholder="Engage with the community!"
               value={newPost}
               onChangeText={setNewPost}
               multiline
@@ -347,9 +431,11 @@ const styles = StyleSheet.create({
   flatListContent: {
     paddingBottom: 20,
   },
-  postBtn: {
-    backgroundColor: "red",
-  }
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default Home;

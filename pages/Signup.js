@@ -15,7 +15,16 @@ function Signup() {
   const [errors, setErrors] = useState([]);
   const [isLoading, setLoading] = useState(false);
 
+  const isFormValid = () => {
+    return name && address && birthday && graduationyear && email && password && confirmPassword;
+  };
+
   const register = async () => {
+    if (!isFormValid()) {
+      Alert.alert("Validation Error", "Please fill in all required fields.");
+      return;
+    }
+
     setLoading(true);
     const errors = validatePassword(password, confirmPassword);
     if (errors.length > 0) {
@@ -77,7 +86,7 @@ function Signup() {
           <Text style={styles.header}>Sign Up</Text>
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Name</Text>
+              <Text style={styles.label}>Name <Text style={styles.asterisk}>*</Text></Text>
               <TextInput
                 style={styles.input}
                 value={name}
@@ -86,7 +95,7 @@ function Signup() {
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Address</Text>
+              <Text style={styles.label}>Address <Text style={styles.asterisk}>*</Text></Text>
               <TextInput
                 style={styles.input}
                 value={address}
@@ -95,7 +104,7 @@ function Signup() {
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Birthday (YYYY-MM-DD)</Text>
+              <Text style={styles.label}>Birthday (YYYY-MM-DD) <Text style={styles.asterisk}>*</Text></Text>
               <TextInput
                 style={styles.input}
                 value={birthday}
@@ -104,7 +113,7 @@ function Signup() {
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Year Graduated</Text>
+              <Text style={styles.label}>Year Graduated <Text style={styles.asterisk}>*</Text></Text>
               <TextInput
                 style={styles.input}
                 value={graduationyear}
@@ -113,7 +122,7 @@ function Signup() {
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>Email <Text style={styles.asterisk}>*</Text></Text>
               <TextInput
                 style={styles.input}
                 value={email}
@@ -122,7 +131,7 @@ function Signup() {
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
+              <Text style={styles.label}>Password <Text style={styles.asterisk}>*</Text></Text>
               <TextInput
                 style={styles.input}
                 value={password}
@@ -132,7 +141,7 @@ function Signup() {
               />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Confirm Password</Text>
+              <Text style={styles.label}>Confirm Password <Text style={styles.asterisk}>*</Text></Text>
               <TextInput
                 style={styles.input}
                 value={confirmPassword}
@@ -141,6 +150,9 @@ function Signup() {
                 required
               />
             </View>
+            <Text style={styles.passwordNote}>
+              Password must be at least 8 characters, contain one uppercase letter, one lowercase letter, and one special character.
+            </Text>
             {errors.length > 0 && (
               <View style={styles.errorContainer}>
                 {errors.map((error, index) => (
@@ -148,7 +160,11 @@ function Signup() {
                 ))}
               </View>
             )}
-            <TouchableOpacity style={styles.button} onPress={register}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={register}
+              disabled={isLoading} // Disable button if loading
+            >
               {isLoading ? (
                 <ActivityIndicator color="#ffffff" />
               ) : (
@@ -183,6 +199,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
+    textAlign: 'center',
   },
   formContainer: {
     padding: 20,
@@ -200,6 +217,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 10,
+    textAlign: 'center',
   },
   form: {
     padding: 20,
@@ -220,6 +238,9 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
   },
+  asterisk: {
+    color: 'red',
+  },
   button: {
     backgroundColor: '#374151',
     padding: 10,
@@ -237,6 +258,11 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 14,
+  },
+  passwordNote: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 15,
   },
   linearGradient: {
     flex: 1,

@@ -1,23 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faEllipsisH, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
-import axios from 'axios';
+import { faEllipsisH } from '@fortawesome/free-solid-svg-icons';
+import * as SecureStore from 'expo-secure-store'; // Ensure you import SecureStore
+import api from './api/api';
 
-const profileImg = require('../resources/profilepictemp.jpg');
+// Placeholder image
+const placeholderImg = require('../resources/profilepictemp.jpg');
 
-function MessageCard({ id, username, usertype, date, content, accessing }) {
+function MessageCard({ id, username, usertype, date, content, accessing, photourl }) {
+  const [uName, setUname] = useState();
   const [hidden, setHidden] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const [errors, setErrors] = useState([]);
 
   const optionsClicked = () => {
     setShowOptions(!showOptions);
   };
 
   useEffect(() => {
+    async function getToken() {
+      const uname = await SecureStore.getItemAsync('uName');
+      setUname(uname);
+    }
+    getToken();
+  }, []);
+
+  useEffect(() => {
     const msgId = id; // replace with the actual message ID
-    axios.get(`http://localhost:3001/checkMessage?messageid=${msgId}`)
+    api.get(`/checkMessage?messageid=${msgId}`)
       .then(response => {
         if (response.data[0].status === "active") {
           setHidden(false);
@@ -30,102 +40,101 @@ function MessageCard({ id, username, usertype, date, content, accessing }) {
       });
   }, [showOptions]);
 
-  const hideMessage = async () => {
-    try {
-      await axios.post('http://localhost:3001/hideMessage', {
-        messageid: id
-      }, { withCredentials: true });
-      setShowOptions(false);
-    } catch (error) {
-      setErrors([...errors, error.response?.status || "Unknown error"]);
-    }
-  };
+  const isOwnMessage = uName === username;
+  const imageSource = photourl ? { uri: photourl } : placeholderImg;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.innerContainer}>
-        <View style={styles.headerContainer}>
-          <Image source={profileImg} style={styles.profileImage} />
-          <View style={styles.textContainer}>
+    <View style={[styles.messageContainer, isOwnMessage ? styles.ownMessage : styles.otherMessage]}>
+      {isOwnMessage ? (
+        <>
+          <View style={styles.bubbleContainer}>
             <Text style={styles.username}>{username}</Text>
-            {accessing === "user" && (
-              <TouchableOpacity onPress={optionsClicked}>
-                <FontAwesomeIcon icon={faEllipsisH} style={styles.optionsIcon} size={24} />
-              </TouchableOpacity>
-            )}
-            <Text style={styles.usertype}>{usertype}</Text>
-            <Text style={styles.date}>{date}</Text>
+            <View style={styles.contentContainer}>
+              <Text style={styles.contentText}>{content}</Text>
+            </View>
+            <View style={styles.footerContainer}>
+              {accessing === "user" && (
+                <TouchableOpacity onPress={optionsClicked}>
+                  <FontAwesomeIcon icon={faEllipsisH} style={styles.optionsIcon} size={24} />
+                </TouchableOpacity>
+              )}
+              <Text style={styles.date}>{date}</Text>
+            </View>
           </View>
-        </View>
-        <View style={styles.contentContainer}>
-          <Text style={styles.contentText}>{content}</Text>
-        </View>
-      </View>
+          <Image source={imageSource} style={styles.profileImage} />
+        </>
+      ) : (
+        <>
+          <Image source={imageSource} style={styles.profileImage} />
+          <View style={styles.bubbleContainer}>
+            <Text style={styles.username}>{username}</Text>
+            <View style={styles.contentContainer}>
+              <Text style={styles.contentText}>{content}</Text>
+            </View>
+            <View style={styles.footerContainer}>
+              {accessing === "user" && (
+                <TouchableOpacity onPress={optionsClicked}>
+                  <FontAwesomeIcon icon={faEllipsisH} style={styles.optionsIcon} size={24} />
+                </TouchableOpacity>
+              )}
+              <Text style={styles.date}>{date}</Text>
+            </View>
+          </View>
+        </>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: 'rgba(255, 165, 0, 0.2)', // Same as bg-orange-300 bg-opacity-20
-    borderRadius: 8,
-    // shadowColor: '#000',
-    // shadowOpacity: 0.1,
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowRadius: 8,
-    elevation: 2,
-    padding: 16,
-    marginBottom: 8,
-    position: 'relative',
-  },
-  innerContainer: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  headerContainer: {
+  messageContainer: {
     flexDirection: 'row',
-    marginBottom: 8,
+    alignItems: 'flex-end',
+    // marginBottom: 8,
   },
-  profileImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  ownMessage: {
+    justifyContent: 'flex-end', // Aligns the bubble and profile image to the right for own messages
   },
-  textContainer: {
+  otherMessage: {
+    justifyContent: 'flex-start', // Aligns the bubble and profile image to the left for others' messages
+  },
+  bubbleContainer: {
+    borderRadius: 8,
+    padding: 4,
+    maxWidth: '75%', // Adjust based on design needs
     flexDirection: 'column',
-    justifyContent: 'center',
-    marginLeft: 8,
-    flex: 1,
   },
   username: {
     fontWeight: 'bold',
     fontSize: 16,
-  },
-  optionsIcon: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    opacity: 0.5,
-  },
-  hiddenIcon: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    opacity: 0.5,
-  },
-  usertype: {
-    opacity: 0.8,
-    fontSize: 14,
-  },
-  date: {
-    opacity: 0.8,
-    fontSize: 14,
+    marginBottom: 4,
   },
   contentContainer: {
-    flexDirection: 'column',
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 8,
   },
   contentText: {
     fontSize: 14,
+  },
+  footerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  optionsIcon: {
+    opacity: 0.5,
+  },
+  date: {
+    opacity: 0.8,
+    fontSize: 10,
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    // marginHorizontal: 8, // Space between image and bubble
   },
 });
 

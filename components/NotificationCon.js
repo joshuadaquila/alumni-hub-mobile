@@ -30,7 +30,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'white',
+    // elevation: 2,
     padding: 16,
     marginBottom: 8,
     flexDirection: 'row',
@@ -51,12 +53,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messageText: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'left',
   },
   dateText: {
     opacity: 0.6,
-    fontSize: 14,
+    fontSize: 10,
     marginLeft: 16, // Ensure there's space between message and date
   },
 });
