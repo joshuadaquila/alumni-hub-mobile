@@ -330,28 +330,74 @@ const GraduateTracerSurvey = () => {
 
   const handleSubmitGenInfo = async () => {
     console.log("Province", province);
-    console.log(name)
-    setIsLoading(true)
-    try {
-      const response = await api.post('/submitGeneralInfo', {
-        name, permanentAdd, email, contactNum, mobileNum, civilStat, sex, birthday, region, province, residence,
-      });
+    console.log(name);
+    setIsLoading(true);
   
-      if (response.status === 200) {
-        // Handle success, e.g., show a success message or redirect the user
-        console.log('Gen Info submitted successfully:', response.data);
-        showAlert();
+    try {
+      // First, check if there is an existing record
+      const checkResponse = await api.get('/getSurveyGenInfo');
+  
+      console.log('Check Response:', checkResponse);
+  
+      if (checkResponse.data.length > 0) {
+        // If a record exists, ask for confirmation before proceeding
+        console.log('Record exists. Prompting user for confirmation.');
+        
+        Alert.alert(
+          "Record Exists",
+          "A record already exists. Do you want to update it?",
+          [
+            {
+              text: "Cancel",
+              onPress: () => {
+                // console.log('User opted not to update. Exiting.');
+                setIsLoading(false);
+              },
+              style: "cancel"
+            },
+            { 
+              text: "OK", 
+              onPress: async () => {
+                // Proceed to submit the general information
+                const response = await api.post('/submitGeneralInfo', {
+                  name, permanentAdd, email, contactNum, mobileNum, civilStat, sex, birthday, region, province, residence,
+                });
+  
+                if (response.status === 200) {
+                  // Handle success, e.g., show a success message or redirect the user
+                  // console.log('Gen Info submitted successfully:', response.data);
+                  showAlert('General information submitted successfully!');
+                } else {
+                  // Handle unexpected status code
+                  console.log('Unexpected response:', response);
+                }
+              }
+            }
+          ]
+        );
       } else {
-        // Handle unexpected status code
-        console.log('Unexpected response:', response);
+        // No existing record, proceed with submitting the information
+        const response = await api.post('/submitGeneralInfo', {
+          name, permanentAdd, email, contactNum, mobileNum, civilStat, sex, birthday, region, province, residence,
+        });
+  
+        if (response.status === 200) {
+          // console.log('Gen Info submitted successfully:', response.data);
+          showAlert('General information submitted successfully!');
+        } else {
+          console.log('Unexpected response:', response);
+        }
       }
     } catch (error) {
-      // Handle errors, e.g., show an error message to the user
+      // Handle errors
       console.error('Error in GEN INFO submitting survey:', error);
-    }finally {
+      showAlert('Error submitting general information. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
+  
+  
 
   const handleSubmitEducBack = async () => {
     setIsLoading(true)
@@ -494,11 +540,11 @@ const GraduateTracerSurvey = () => {
       {section === 'general' && (
         <View>
           <Text>Name</Text>
-          <TextInput style={styles.input} placeholder="Name" value={name}  onChangeText={setName}/>
+          <TextInput style={styles.input} placeholder="Name" value={name} editable={false} onChangeText={setName}/>
           <Text>Permanent Address</Text>
-          <TextInput style={styles.input} placeholder="Permanent Address" value={permanentAdd} onChangeText={setPermanentAdd} />
+          <TextInput style={styles.input} editable={false} placeholder="Permanent Address" value={permanentAdd} onChangeText={setPermanentAdd} />
           <Text>Email Address</Text>
-          <TextInput style={styles.input} placeholder="Email Address" keyboardType="email-address" value={email} onChangeText={setEmailAdd} />
+          <TextInput style={styles.input} editable={false} placeholder="Email Address" keyboardType="email-address" value={email} onChangeText={setEmailAdd} />
           <Text>Telephone or Contact Number(s)</Text>
           <TextInput style={styles.input} placeholder="Telephone or Contact Number(s)" keyboardType="phone-pad" value={contactNum} onChangeText={setContactNum} />
           <Text>Mobile Number</Text>
@@ -522,6 +568,7 @@ const GraduateTracerSurvey = () => {
             testID="dateTimePicker"
             value={new Date()}
             // mode={mode}
+            disabled={true}
             is24Hour={true}
             display="default"
             onChange={onChange}
@@ -530,7 +577,7 @@ const GraduateTracerSurvey = () => {
           <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
             {console.log(birthday)}
             <TextInput style={{width: '90%', backgroundColor: 'white', padding: 10, borderRadius: 5}} 
-              value={birthday} onChangeText={setBirthday} placeholder="YYYY-MM-DD" keyboardType="number-pad" />
+              value={birthday} onChangeText={setBirthday} placeholder="YYYY-MM-DD" editable={false} keyboardType="number-pad" />
             <TouchableOpacity onPress={()=> setShowDatePicker(!showDatePicker)}>
               <FontAwesomeIcon icon={faCalendarPlus} size={20} />
             </TouchableOpacity>
