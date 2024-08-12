@@ -169,7 +169,7 @@ const GraduateTracerSurvey = () => {
     noJobOp: false,
     notLookJob: false
   })
-  const [presentEmployStat, setPresentEmployStat] = useState('Regular of Permanent');
+  const [presentEmployStat, setPresentEmployStat] = useState('Regular or Permanent');
   const [skillsAcquired, setSkillsAcquired] = useState();
   const [presentOccupation, setPresentOccupation] = useState('');
   const [majorLine, setMajorLine] = useState('Health and Social Work');
@@ -397,102 +397,229 @@ const GraduateTracerSurvey = () => {
     }
   };
   
-  
-
   const handleSubmitEducBack = async () => {
-    setIsLoading(true)
-    try {
-      const response = await api.post('/submitEducationalBackground', {
-        educationalAttain, professionalExams,  undergraduateReasons, graduateReasons
-      });
+    setIsLoading(true);
   
-      if (response.status === 200) {
-        // Handle success, e.g., show a success message or redirect the user
-        console.log('Educ Back submitted successfully:', response.data);
-        showAlert();
+    try {
+      // First, check if there is an existing record
+      const checkResponse = await api.get('/getSurveyEducBack');
+  
+      if (checkResponse.data.length > 0) {
+        // If a record exists, ask for confirmation before proceeding
+        Alert.alert(
+          "Record Exists",
+          "A record already exists. Do you want to update it?",
+          [
+            {
+              text: "Cancel",
+              onPress: () => {
+                setIsLoading(false);
+              },
+              style: "cancel"
+            },
+            { 
+              text: "OK", 
+              onPress: async () => {
+                const response = await api.post('/submitEducationalBackground', {
+                  educationalAttain, professionalExams, undergraduateReasons, graduateReasons
+                });
+  
+                if (response.status === 200) {
+                  showAlert('Educational background submitted successfully!');
+                } else {
+                  console.log('Unexpected response:', response);
+                }
+              }
+            }
+          ]
+        );
       } else {
-        // Handle unexpected status code
-        console.log('Unexpected response:', response);
+        // No existing record, proceed with submitting the information
+        const response = await api.post('/submitEducationalBackground', {
+          educationalAttain, professionalExams, undergraduateReasons, graduateReasons
+        });
+  
+        if (response.status === 200) {
+          showAlert('Educational background submitted successfully!');
+        } else {
+          console.log('Unexpected response:', response);
+        }
       }
     } catch (error) {
-      // Handle errors, e.g., show an error message to the user
       console.error('Error in EDUC BACK submitting survey:', error);
-    }finally {
+      showAlert('Error submitting educational background. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
-
+  
   const handleSubmitTraining = async () => {
-    setIsLoading(true)
-    try {
-      const response = await api.post('/submitTraining', {
-        trainings, reasonAdvanceStud
-      });
+    setIsLoading(true);
   
-      if (response.status === 200) {
-        // Handle success, e.g., show a success message or redirect the user
-        console.log('Training submitted successfully:', response.data);
-        showAlert();
+    try {
+      // First, check if there is an existing record
+      const checkResponse = await api.get('/getSurveyTraining');
+  
+      if (checkResponse.data.length > 0) {
+        Alert.alert(
+          "Record Exists",
+          "A record already exists. Do you want to update it?",
+          [
+            {
+              text: "Cancel",
+              onPress: () => {
+                setIsLoading(false);
+              },
+              style: "cancel"
+            },
+            { 
+              text: "OK", 
+              onPress: async () => {
+                const response = await api.post('/submitTraining', {
+                  trainings, reasonAdvanceStud
+                });
+  
+                if (response.status === 200) {
+                  showAlert('Training data submitted successfully!');
+                } else {
+                  console.log('Unexpected response:', response);
+                }
+              }
+            }
+          ]
+        );
       } else {
-        // Handle unexpected status code
-        console.log('Unexpected response:', response);
+        const response = await api.post('/submitTraining', {
+          trainings, reasonAdvanceStud
+        });
+  
+        if (response.status === 200) {
+          showAlert('Training data submitted successfully!');
+        } else {
+          console.log('Unexpected response:', response);
+        }
       }
     } catch (error) {
-      // Handle errors, e.g., show an error message to the user
-      console.error('Error in training submitting survey:', error);
-    }finally {
+      console.error('Error in TRAINING submitting survey:', error);
+      showAlert('Error submitting training data. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
-
+  
   const handleSubmitEmployment = async () => {
-    console.log(presentOccupation)
-    setIsLoading(true)
-    try {
-      const response = await api.post('/submitEmploymentData', {
-        presentlyEmployed, reasonUnemployed, presentEmployStat, skillsAcquired, presentOccupation, majorLine, placeOfWork, firstJobAfterJob, 
-        reasonStayingJob, firstJobRelatedToCourse, reasonAcceptingJob, reasonChangingJob, durationFirstJob, howFindFirstJob, durationJobSeeking, firstJobLvl,
-        secondJobLvl, earning, curriculumRelevance, competencies, suggestion, 
-      });
-      
-      if (response.status === 200) {
-        // Handle success, e.g., show a success message or redirect the user
-        console.log('Training submitted successfully:', response.data);
-        showAlert();
-      } else {
-        // Handle unexpected status code
-        console.log('Unexpected response:', response);
-      }
-    } catch (error) {
-      // Handle errors, e.g., show an error message to the user
-      console.error('Error in training submitting survey:', error);
-    }finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmitContribution = async () => {
-    setIsLoading(true)
-    try {
-      const response = await api.post('/submitContributionProfile', {
-        awardName, awardBody, date, selectedFiles
-      });
+    setIsLoading(true);
   
-      if (response.status === 200) {
-        // Handle success, e.g., show a success message or redirect the user
-        console.log('Training submitted successfully:', response.data);
-        showAlert();
+    try {
+      // First, check if there is an existing record
+      const checkResponse = await api.get('/getSurveyEmployment');
+  
+      if (checkResponse.data.length > 0) {
+        Alert.alert(
+          "Record Exists",
+          "A record already exists. Do you want to update it?",
+          [
+            {
+              text: "Cancel",
+              onPress: () => {
+                setIsLoading(false);
+              },
+              style: "cancel"
+            },
+            { 
+              text: "OK", 
+              onPress: async () => {
+                const response = await api.post('/submitEmploymentData', {
+                  presentlyEmployed, reasonUnemployed, presentEmployStat, skillsAcquired, presentOccupation, majorLine, placeOfWork, firstJobAfterJob,
+                  reasonStayingJob, firstJobRelatedToCourse, reasonAcceptingJob, reasonChangingJob, durationFirstJob, howFindFirstJob, durationJobSeeking, firstJobLvl,
+                  secondJobLvl, earning, curriculumRelevance, competencies, suggestion
+                });
+  
+                if (response.status === 200) {
+                  showAlert('Employment data submitted successfully!');
+                } else {
+                  console.log('Unexpected response:', response);
+                }
+              }
+            }
+          ]
+        );
       } else {
-        // Handle unexpected status code
-        console.log('Unexpected response:', response);
+        const response = await api.post('/submitEmploymentData', {
+          presentlyEmployed, reasonUnemployed, presentEmployStat, skillsAcquired, presentOccupation, majorLine, placeOfWork, firstJobAfterJob,
+          reasonStayingJob, firstJobRelatedToCourse, reasonAcceptingJob, reasonChangingJob, durationFirstJob, howFindFirstJob, durationJobSeeking, firstJobLvl,
+          secondJobLvl, earning, curriculumRelevance, competencies, suggestion
+        });
+  
+        if (response.status === 200) {
+          showAlert('Employment data submitted successfully!');
+        } else {
+          console.log('Unexpected response:', response);
+        }
       }
     } catch (error) {
-      // Handle errors, e.g., show an error message to the user
-      console.error('Error in training submitting survey:', error);
-    }finally {
+      console.error('Error in EMPLOYMENT submitting survey:', error);
+      showAlert('Error submitting employment data. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
+  
+  const handleSubmitContribution = async () => {
+    setIsLoading(true);
+  
+    try {
+      // First, check if there is an existing record
+      const checkResponse = await api.get('/getSurveyContribution');
+  
+      if (checkResponse.data.length > 0) {
+        Alert.alert(
+          "Record Exists",
+          "A record already exists. Do you want to update it?",
+          [
+            {
+              text: "Cancel",
+              onPress: () => {
+                setIsLoading(false);
+              },
+              style: "cancel"
+            },
+            { 
+              text: "OK", 
+              onPress: async () => {
+                const response = await api.post('/submitContributionProfile', {
+                  awardName, awardBody, date, selectedFiles
+                });
+  
+                if (response.status === 200) {
+                  showAlert('Contribution profile submitted successfully!');
+                } else {
+                  console.log('Unexpected response:', response);
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        const response = await api.post('/submitContributionProfile', {
+          awardName, awardBody, date, selectedFiles
+        });
+  
+        if (response.status === 200) {
+          showAlert('Contribution profile submitted successfully!');
+        } else {
+          console.log('Unexpected response:', response);
+        }
+      }
+    } catch (error) {
+      console.error('Error in CONTRIBUTION submitting survey:', error);
+      showAlert('Error submitting contribution profile. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
