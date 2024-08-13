@@ -43,6 +43,8 @@ const GraduateTracerSurvey = () => {
         // Format the birthday to yyyy-mm-dd
         const formattedBirthday = new Date(alumniInfo.birthday).toISOString().slice(0, 10);
         setBirthday(formattedBirthday);
+
+        setEducationalAttain(educationalAttain[0].degree = alumniInfo.program)
   
         // setLoading(false); // Set loading to false after data is fetched
       })

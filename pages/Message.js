@@ -41,7 +41,7 @@ function Message() {
       // console.log('Received message via socket:', message);
       // Ensure message has all necessary fields before adding
       if (message && message.messageid && message.name && message.email && message.photourl && message.content && message.date) {
-        setMessages(prevMessages => [message, ...prevMessages]);
+        setMessages(prevMessages => [...prevMessages, message]);
       } else {
         console.error('Invalid message format:', message);
       }

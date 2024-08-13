@@ -9,6 +9,7 @@ function Signup() {
   const [address, setAddress] = useState("");
   const [birthday, setBirthday] = useState("");
   const [graduationyear, setGradyear] = useState("");
+  const [program, setProgram] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -118,6 +119,15 @@ function Signup() {
                 style={styles.input}
                 value={graduationyear}
                 onChangeText={(text) => setGradyear(text)}
+                required
+              />
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Program <Text style={styles.asterisk}>*</Text></Text>
+              <TextInput
+                style={styles.input}
+                value={program}
+                onChangeText={(text) => setProgram(text)}
                 required
               />
             </View>
