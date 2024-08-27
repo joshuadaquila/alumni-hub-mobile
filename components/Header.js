@@ -156,7 +156,7 @@ const Header = () => {
 
   return (
     <LinearGradient
-      colors={['rgb(255, 226, 226)', 'rgb(166, 213, 255)', '#192f6a']}
+      colors={['white', 'white']}
       start={[0, 0]}
       end={[1, 1]}
       style={styles.linearGradient}

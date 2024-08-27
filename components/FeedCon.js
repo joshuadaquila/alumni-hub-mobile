@@ -258,8 +258,9 @@ export default function FeedContainer({ feedid, profilepicurl, username, content
 const styles = StyleSheet.create({
   // Existing styles...
   container: {
-    backgroundColor: 'rgba(255, 165, 0, 0.2)',
+    backgroundColor: '#f2f2f2',
     padding: 8,
+    elevation: 5,
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,

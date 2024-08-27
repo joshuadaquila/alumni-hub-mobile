@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import * as SecureStore from 'expo-secure-store'; 
+import * as SecureStore from 'expo-secure-store';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCalendarCheck, faCalendarDay, faCalendarXmark, faCheck, faClock, faLocationPin, faUserCheck } from '@fortawesome/free-solid-svg-icons';
 import { faStar } from '@fortawesome/free-regular-svg-icons';
@@ -15,6 +15,7 @@ function EventCard(props) {
   const [errors, setErrors] = useState([]);
   const [token, setToken] = useState('');
   const [registered, setRegistered] = useState(false);
+  const [isPastEvent, setIsPastEvent] = useState(false);
 
   useEffect(() => {
     api.get(`/checkEvent?eventid=${eventid}`)
@@ -24,7 +25,12 @@ function EventCard(props) {
       .catch(error => {
         console.error("Error fetching event status:", error);
       });
-  }, [eventid]);
+
+    // Check if the event date is in the past
+    const eventDate = new Date(date);
+    const currentDate = new Date();
+    setIsPastEvent(eventDate < currentDate);
+  }, [eventid, date]);
 
   const formatDate = (dateString) => {
     const dateObj = new Date(dateString);
@@ -60,7 +66,7 @@ function EventCard(props) {
           <View style={styles.detailRow}>
             <View style={styles.detailItem}>
               <FontAwesomeIcon icon={faUserCheck} />
-              <Text>{capacity}</Text>
+              <Text>Capacity: {capacity}</Text>
             </View>
             <View style={styles.detailItem}>
               <FontAwesomeIcon icon={faCalendarCheck} />
@@ -77,8 +83,11 @@ function EventCard(props) {
               <Text>{location}</Text>
             </View>
           </View>
+          <Text>Registration Deadline: </Text>
           <View style={styles.detailRow}>
+            
             <View style={styles.detailItem}>
+              
               <FontAwesomeIcon icon={faCalendarXmark} />
               <Text>{formatDate(registrationdeadline)}</Text>
             </View>
@@ -86,13 +95,22 @@ function EventCard(props) {
         </View>
         <Text style={styles.description}>{description}</Text>
         {accessing !== "user" && (
-          <TouchableOpacity style={[styles.button, registered ? styles.registeredButton : styles.joinButton]} onPress={registerEvent} disabled={isLoading}>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              registered ? styles.registeredButton : styles.joinButton
+            ]}
+            onPress={registerEvent}
+            disabled={isLoading || isPastEvent} // Disable if the event is in the past or if loading
+          >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
               <>
                 <FontAwesomeIcon icon={registered ? faCheck : faStar} color='white' />
-                <Text style={styles.buttonText}>{registered ? "REGISTERED" : "REGISTER"}</Text>
+                <Text style={styles.buttonText}>
+                  {isPastEvent ? "EVENT PASSED" : (registered ? "REGISTERED" : "REGISTER")}
+                </Text>
               </>
             )}
           </TouchableOpacity>
@@ -106,7 +124,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: 'rgba(255, 165, 0, 0.2)',
     margin: 10,
-    // elevation: 2,
     borderWidth: 1,
     borderColor: 'white',
     borderRadius: 10,
@@ -136,6 +153,8 @@ const styles = StyleSheet.create({
   },
   detailRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
   },
   detailItem: {
     flexDirection: 'row',
@@ -145,7 +164,7 @@ const styles = StyleSheet.create({
     padding: 5,
     margin: 2,
     borderRadius: 5,
-    width: "auto",
+    width: "45%", // Adjust width as needed
   },
   description: {
     marginTop: 10,

@@ -46,13 +46,13 @@ const Login = ({ handleLogin, navigation, error }) => {
     <View style={styles.container}>
       {console.log(loginError)}
       <LinearGradient
-        colors={['rgb(255, 226, 226)', 'rgb(166, 213, 255)', '#192f6a']}
+        colors={['white','white']}
         start={[0, 0]}
         end={[1, 1]}
         style={styles.linearGradient}
       >
         <View style={styles.loginCon}>
-          <Text style={styles.title}>ALUMNI ENGAGEMENT HUB</Text>
+          <Text style={styles.title}>ALUMNI TRACER AND ENGAGEMENT HUB</Text>
           <Image source={ualogo} style={styles.logo} />
 
           <View style={styles.formContainer}>
@@ -127,6 +127,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: 'black',
+    textAlign: 'center'
   },
   logo: {
     width: 250,
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   button: {
-    backgroundColor: '#374151',
+    backgroundColor: '#7f1d1d',
     padding: 10,
     borderRadius: 5,
     justifyContent: 'center',

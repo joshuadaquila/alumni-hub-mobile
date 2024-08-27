@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TextInput, Button, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TextInput, Alert, TouchableOpacity } from 'react-native';
 import io from 'socket.io-client';
 import moment from 'moment';
 import MessageCard from '../components/MessageCard';
@@ -38,10 +38,8 @@ function Message() {
     });
 
     newSocket.on('messageNotification', (message) => {
-      // console.log('Received message via socket:', message);
-      // Ensure message has all necessary fields before adding
       if (message && message.messageid && message.name && message.email && message.photourl && message.content && message.date) {
-        setMessages(prevMessages => [...prevMessages, message]);
+        setMessages(prevMessages => [message, ...prevMessages]); // Add new messages at the top
       } else {
         console.error('Invalid message format:', message);
       }
@@ -56,8 +54,8 @@ function Message() {
     setLoading(true);
     api.get('/getMessages')
       .then(response => {
-        // console.log('Fetched messages:', response.data);
-        setMessages(response.data);
+        const fetchedMessages = response.data.reverse(); // Reverse the fetched messages
+        setMessages(fetchedMessages);
         setLoading(false);
       })
       .catch(error => {
@@ -76,33 +74,30 @@ function Message() {
 
     const messageData = {
       content: newMessage,
-      // Add any other fields required by your API
     };
 
     api.post('/addUserMessage', messageData)
       .then(response => {
-
-        // Send message to socket server with necessary fields
         setSending(false);
         socket.emit('messageNotification', response.data);
-        sendNotification(messageData.content)
+        sendNotification(messageData.content);
         setNewMessage('');
       })
       .catch(error => {
         console.log("ERROR in AXIOS POST");
         console.error(error);
         Alert.alert('Error', 'Failed to send message');
-      })
+      });
   };
 
   const renderMessage = ({ item }) => (
     <MessageCard
       key={item.messageid ? item.messageid.toString() : 'default_key'}
-      username={item.name} // Ensure 'name' is present
-      usertype={item.email} // Ensure 'email' is present
+      username={item.name}
+      usertype={item.email}
       date={moment(item.date).format('YYYY-MM-DD HH:mm')}
       content={item.content}
-      photourl={item.photourl} // Ensure 'photourl' is present
+      photourl={item.photourl}
       id={item.messageid}
     />
   );
@@ -111,8 +106,6 @@ function Message() {
     const type = "message";
     const message = `New Message: ${title}`;
 
-  
-    // Send the notification to the backend to store it
     api.post('/addNotification', {
       title,
       message,
@@ -138,6 +131,7 @@ function Message() {
             data={messages}
             renderItem={renderMessage}
             keyExtractor={item => item.messageid ? item.messageid.toString() : 'default_key'}
+            inverted={true} // Invert the FlatList to show new messages at the bottom
           />
         )}
       </View>
@@ -149,7 +143,6 @@ function Message() {
           multiline={true}
           onChangeText={setNewMessage}
         />
-        {/* <Button title="Send" onPress={handleSendMessage} /> */}
         <TouchableOpacity onPress={handleSendMessage} style={styles.sendbtn} disabled={sending}>
           <FontAwesomeIcon icon={faPaperPlane} color='white'/>
         </TouchableOpacity>

@@ -3,6 +3,10 @@ import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, Alert, Scro
 import { ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import api from '../components/api/api';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faCalendarPlus, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { useNavigation } from '@react-navigation/native'; // Import useNavigation for navigation
 
 function Signup() {
   const [name, setName] = useState("");
@@ -15,6 +19,9 @@ function Signup() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState([]);
   const [isLoading, setLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const navigation = useNavigation(); // Initialize navigation
 
   const isFormValid = () => {
     return name && address && birthday && graduationyear && email && password && confirmPassword;
@@ -25,7 +32,7 @@ function Signup() {
       Alert.alert("Validation Error", "Please fill in all required fields.");
       return;
     }
-
+  
     setLoading(true);
     const errors = validatePassword(password, confirmPassword);
     if (errors.length > 0) {
@@ -33,24 +40,44 @@ function Signup() {
       setLoading(false);
       return;
     }
+  
     try {
       const response = await api.post('/signup', {
         name,
         address,
         birthday,
         graduationyear,
+        program,
         email,
         password
       }, { withCredentials: true });
-      Alert.alert("Success", "Registration successful");
+  
+      Alert.alert(
+        "Success", 
+        "Registration successful",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              navigation.navigate('Login'); // Navigate to the Login screen or reset form fields
+              // Optionally, reset form fields here if needed:
+              // setName(""); setAddress(""); setBirthday(""); setGradyear(""); setProgram(""); setEmail(""); setPassword(""); setConfirmPassword("");
+            }
+          }
+        ]
+      );
       console.log(response.data); // handle response as needed
     } catch (error) {
-      setErrors([...errors, error.response?.status || "Unknown error"]);
+      if (error.response?.status === 409) {
+        Alert.alert("Email Taken", "The email address is already in use. Please use a different email.");
+      } else {
+        setErrors([...errors, error.response?.status || "Unknown error"]);
+      }
     } finally {
       setLoading(false);
     }
   };
-
+  
   const validatePassword = (password, confirmPassword) => {
     const errors = [];
     if (password !== confirmPassword) {
@@ -71,9 +98,18 @@ function Signup() {
     return errors;
   };
 
+  const onChange = (event, selectedDate) => {
+    if (selectedDate) {
+      const currentDate = selectedDate;
+      const formattedDate = currentDate.toISOString().split('T')[0];
+      setShowDatePicker(false);
+      setBirthday(formattedDate);
+    }
+  };
+
   return (
     <LinearGradient
-      colors={['rgb(255, 226, 226)', 'rgb(166, 213, 255)', '#192f6a']}
+      colors={['white', 'white' ]}
       start={[0, 0]}
       end={[1, 1]}
       style={styles.linearGradient}
@@ -84,7 +120,7 @@ function Signup() {
           <Text style={styles.title}>Be a part of the community, KASUBAY!</Text>
         </View>
         <View style={styles.formContainer}>
-          <Text style={styles.header}>Sign Up</Text>
+          <Text style={styles.header}>Account Registration</Text>
           <View style={styles.form}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Name <Text style={styles.asterisk}>*</Text></Text>
@@ -106,12 +142,30 @@ function Signup() {
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Birthday (YYYY-MM-DD) <Text style={styles.asterisk}>*</Text></Text>
+              <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
               <TextInput
-                style={styles.input}
+                style={styles.inputDate}
                 value={birthday}
                 onChangeText={(text) => setBirthday(text)}
                 required
               />
+
+              {showDatePicker && (<DateTimePicker
+                testID="dateTimePicker"
+                value={new Date()}
+                // mode={mode}
+                disabled={true}
+                is24Hour={true}
+                display="default"
+                onChange={onChange}
+              />)}
+
+              <TouchableOpacity onPress={()=> setShowDatePicker(!showDatePicker)}>
+                <FontAwesomeIcon icon={faCalendarPlus} size={20} />
+              </TouchableOpacity>
+              </View>
+
+
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Year Graduated <Text style={styles.asterisk}>*</Text></Text>
@@ -121,6 +175,7 @@ function Signup() {
                 onChangeText={(text) => setGradyear(text)}
                 required
               />
+              
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Program <Text style={styles.asterisk}>*</Text></Text>
@@ -128,6 +183,7 @@ function Signup() {
                 style={styles.input}
                 value={program}
                 onChangeText={(text) => setProgram(text)}
+                placeholder='e.g. BS Computer Science'
                 required
               />
             </View>
@@ -160,9 +216,10 @@ function Signup() {
                 required
               />
             </View>
-            <Text style={styles.passwordNote}>
-              Password must be at least 8 characters, contain one uppercase letter, one lowercase letter, and one special character.
-            </Text>
+            <View style={styles.passwordNote}>
+              <FontAwesomeIcon icon={faInfoCircle}/>
+              <Text>Password must be at least 8 characters, contain one uppercase letter, one lowercase letter, and one special character.</Text>
+            </View>
             {errors.length > 0 && (
               <View style={styles.errorContainer}>
                 {errors.map((error, index) => (
@@ -210,72 +267,86 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
+    marginTop: 10,
   },
   formContainer: {
-    padding: 20,
     backgroundColor: '#fff',
+    padding: 20,
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 5,
     width: '100%',
     maxWidth: 400,
   },
   header: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 10,
+    marginBottom: 20,
     textAlign: 'center',
   },
   form: {
-    padding: 20,
+    width: '100%',
   },
   inputGroup: {
     marginBottom: 15,
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#333',
     marginBottom: 5,
-  },
-  input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    padding: 10,
-    fontSize: 16,
   },
   asterisk: {
     color: 'red',
   },
-  button: {
-    backgroundColor: '#374151',
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
     padding: 10,
     borderRadius: 5,
-    justifyContent: 'center',
+    fontSize: 16,
+    color: '#333',
+    backgroundColor: '#f9f9f9',
+  },
+  inputDate: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 10,
+    borderRadius: 5,
+    fontSize: 16,
+    color: '#333',
+    backgroundColor: '#f9f9f9',
+    width: '85%'
+  },
+  button: {
+    backgroundColor: '#7f1d1d',
+    paddingVertical: 15,
+    borderRadius: 5,
     alignItems: 'center',
+    marginTop: 10,
   },
   buttonText: {
-    fontSize: 16,
     color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   errorContainer: {
-    marginBottom: 10,
+    marginBottom: 15,
   },
   errorText: {
     color: 'red',
     fontSize: 14,
+    marginBottom: 5,
   },
   passwordNote: {
-    fontSize: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    fontSize: 12,
     color: '#555',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   linearGradient: {
     flex: 1,
+    justifyContent: 'center',
   },
 });
 
