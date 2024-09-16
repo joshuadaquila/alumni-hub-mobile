@@ -23,7 +23,7 @@ const GraduateTracerSurvey = () => {
   const [contactNum, setContactNum] = useState('');
   const [mobileNum, setMobileNum] = useState('');
   const [civilStat, setCivilStat] = useState('Single');
-  const [sex, setSex] = useState('');
+  const [sex, setSex] = useState('Male');
   const [birthday, setBirthday] = useState();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [region, setRegion] = useState('Region 1');
@@ -44,7 +44,8 @@ const GraduateTracerSurvey = () => {
         const formattedBirthday = new Date(alumniInfo.birthday).toISOString().slice(0, 10);
         setBirthday(formattedBirthday);
 
-        setEducationalAttain(educationalAttain[0].degree = alumniInfo.program)
+        console.log(alumniInfo);
+        updateDegree(alumniInfo.program)
   
         // setLoading(false); // Set loading to false after data is fetched
       })
@@ -81,6 +82,14 @@ const GraduateTracerSurvey = () => {
   // const [yearGrad, setYearGrad] = useState('');
 
   const [educationalAttain, setEducationalAttain] = useState([{degree: '', college: '', yearGrad: '', honor: ''}])
+
+  const updateDegree = (newDegree) => {
+    // Create a copy of the array with the updated degree value
+    const updatedEducation = [{ ...educationalAttain[0], degree: newDegree }];
+
+    // Set the updated state
+    setEducationalAttain(updatedEducation);
+  };
 
   const [section, setSection] = useState(null);
   const [professionalExams, setProfessionalExams] = useState([{ name: '', date: '', rating: '' }]);
@@ -155,7 +164,7 @@ const GraduateTracerSurvey = () => {
   const [reasonAdvanceStud, setReasonAdvanceStud] = useState('For promotion');
 
   // D. EMPLOYMENT
-  const [presentlyEmployed, setPresentlyEmployed] = useState('Yes');
+  const [presentlyEmployed, setPresentlyEmployed] = useState('employed');
 
   const handleReasonUnemployedChange = (reason) => {
     setReasonUnemployed((prevReasons) => ({
@@ -262,19 +271,23 @@ const GraduateTracerSurvey = () => {
 
   const [selectedFiles, setSelectedFiles] = useState([]);
 
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState([]);
 
   const handleSelectImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permission.granted) {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
+        // allowsEditing: true,
         aspect: [4, 3],
         quality: 1,
       });
       if (!result.cancelled) {
-        setSelectedImage(result.uri);
+        setSelectedImage(result.assets[0]);
+        console.log(result)
+        console.log("Image is selected")
+      }else{
+        console.log("Image is not selected")
       }
     } else {
       Alert.alert('Permission Denied', 'Permission to access media library was denied.');
@@ -286,36 +299,32 @@ const GraduateTracerSurvey = () => {
       Alert.alert('Error', 'No image selected.');
       return;
     }
-
+  
     const formData = new FormData();
     formData.append('image', {
-      uri: selectedImage,
+      uri: selectedImage.uri,
       type: 'image/jpeg',
       name: 'image.jpg',
     });
-
+  
     try {
-      const response = await fetch('http://your-backend-url/uploadImage', {
-        method: 'POST',
-        body: formData,
+      const response = await api.post('/survey/uploadImage', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'multipart/form-data', // Axios handles this automatically, but you can specify it
         },
       });
-
-      if (!response.ok) {
-        throw new Error('Image upload failed!');
-      }
-
+  
       Alert.alert('Success', 'Image uploaded successfully!');
-      setSelectedImage(null);
+      console.log('Upload result:', response.data); // Optional: log the result for debugging
+      setSelectedImage([]);
     } catch (error) {
       console.error('Error uploading image:', error);
       Alert.alert('Error', 'Failed to upload image.');
     }
   };
+
   const handleRemoveFile = (uri) => {
-    setSelectedFiles(selectedFiles.filter(file => file.uri !== uri));
+    setSelectedImage([]);
   };
 
   const showAlert = () => {
@@ -461,6 +470,7 @@ const GraduateTracerSurvey = () => {
     try {
       // First, check if there is an existing record
       const checkResponse = await api.get('/getSurveyTraining');
+      console.log("check response", checkResponse);
   
       if (checkResponse.data.length > 0) {
         Alert.alert(
@@ -514,7 +524,7 @@ const GraduateTracerSurvey = () => {
   
     try {
       // First, check if there is an existing record
-      const checkResponse = await api.get('/getSurveyEmployment');
+      const checkResponse = await api.get('/getEmployData');
   
       if (checkResponse.data.length > 0) {
         Alert.alert(
@@ -572,7 +582,7 @@ const GraduateTracerSurvey = () => {
   
     try {
       // First, check if there is an existing record
-      const checkResponse = await api.get('/getSurveyContribution');
+      const checkResponse = await api.get('/getContriProfile');
   
       if (checkResponse.data.length > 0) {
         Alert.alert(
@@ -590,9 +600,10 @@ const GraduateTracerSurvey = () => {
               text: "OK", 
               onPress: async () => {
                 const response = await api.post('/submitContributionProfile', {
-                  awardName, awardBody, date, selectedFiles
+                  awardName, awardBody, date, selectedImage
                 });
-  
+                handleUpload();
+
                 if (response.status === 200) {
                   showAlert('Contribution profile submitted successfully!');
                 } else {
@@ -651,7 +662,7 @@ const GraduateTracerSurvey = () => {
   };
   return (
     <LinearGradient
-      colors={['rgb(255, 226, 226)', 'rgb(166, 213, 255)', '#192f6a']}
+      colors={['white', 'white']}
       start={[0, 0]}
       end={[1, 1]}
       style={styles.linearGradient}
@@ -665,7 +676,7 @@ const GraduateTracerSurvey = () => {
       {/* GENERAL INFO */}
       <Text style={styles.title}>GRADUATE TRACER SURVEY (GTS)</Text>
       <Text style={styles.header}>A. GENERAL INFORMATION</Text>
-      <Button title="Toggle General Information" color={'#1c1c1e'} onPress={() => toggleSection('general')} />
+      <Button title="Toggle General Information" color={'#7f1d1d'} onPress={() => toggleSection('general')} />
       {section === 'general' && (
         <View>
           <Text>Name</Text>
@@ -746,7 +757,7 @@ const GraduateTracerSurvey = () => {
       )}
 
       <Text style={styles.header}>B. EDUCATIONAL BACKGROUND</Text>
-      <Button title="Toggle Educational Background" color={'#1c1c1e'} onPress={() => toggleSection('education')} />
+      <Button title="Toggle Educational Background" color={'#7f1d1d'} onPress={() => toggleSection('education')} />
       {section === 'education' && (
         <View>
           <Text>Educational Attainment (Baccalaureate Degree only)</Text>
@@ -756,6 +767,7 @@ const GraduateTracerSurvey = () => {
                 style={styles.input}
                 placeholder="Degree(s) & Specialization(s)"
                 value={degree.degree}
+                editable={false}
                 onChangeText={text => {
                   const newEducationalAttain = [...educationalAttain];
                   newEducationalAttain[index].degree = text;
@@ -1012,7 +1024,7 @@ const GraduateTracerSurvey = () => {
 
       {/* TRAININGS */}
       <Text style={styles.header}>C. TRAINING(S)/ADVANCE STUDIES ATTENDED AFTER COLLEGE</Text>
-      <Button title="Toggle Training/Advance Studies" color={'#1c1c1e'} onPress={() => toggleSection('training')} />
+      <Button title="Toggle Training/Advance Studies" color={'#7f1d1d'} onPress={() => toggleSection('training')} />
       {section === 'training' && (
         <View>
           <Text>Please list down all professional or work-related training program(s) including advance studies you have attended after college. </Text>
@@ -1026,7 +1038,7 @@ const GraduateTracerSurvey = () => {
                 setTrainings(newTrainings);
               }} />
               <Text>Duration and Credits Earned</Text>
-              <TextInput style={styles.input} placeholder="Duration and Credits" value={training.duration} onChangeText={(text) => {
+              <TextInput style={styles.input} mand placeholder="Duration and Credits" value={training.duration} onChangeText={(text) => {
                 const newTrainings = [...trainings];
                 newTrainings[index].duration = text;
                 setTrainings(newTrainings);
@@ -1057,13 +1069,13 @@ const GraduateTracerSurvey = () => {
       
       {/* EMPLOYMENT */}
       <Text style={styles.header}>D. EMPLOYMENT DATA</Text>
-      <Button title="Toggle Employment Data" color={'#1c1c1e'} onPress={() => toggleSection('employment')} />
+      <Button title="Toggle Employment Data" color={'#7f1d1d'} onPress={() => toggleSection('employment')} />
       {section === 'employment' && (
         <View>
           <Text>Are you presently employed?</Text>
           <Picker style={styles.picker} selectedValue={presentlyEmployed} onValueChange={setPresentlyEmployed} >
-            <Picker.Item label="Yes" value="Yes" />
-            <Picker.Item label="No" value="No" />
+            <Picker.Item label="Yes" value="employed" />
+            <Picker.Item label="No" value="unemployed" />
             <Picker.Item label="Never Employed" value="Never Employed" />
           </Picker>
           
@@ -1108,6 +1120,7 @@ const GraduateTracerSurvey = () => {
               <Picker.Item label="Real Estate, Renting and Business Activities" value="real_estate" />
               <Picker.Item label="Public Administration and Defense" value="public_administration" />
               <Picker.Item label="Education" value="education" />
+              <Picker.Item label="Information Technology" value="infotech" />
               <Picker.Item label="Health and Social Work" value="health" />
               <Picker.Item label="Other Community, Social and Personal Service Activities" value="other_services" />
               <Picker.Item label="Private Households with Employed Persons" value="private_households" />
@@ -1257,7 +1270,7 @@ const GraduateTracerSurvey = () => {
       
       {/* CONTRIBUTION */}
       <Text style={styles.header}>E. CONTRIBUTION DATA</Text>
-      <Button title="Toggle Contribution Data" color={'#1c1c1e'} onPress={() => toggleSection('contribution')} />
+      <Button title="Toggle Contribution Data" color={'#7f1d1d'} onPress={() => toggleSection('contribution')} />
       {section === 'contribution' && (
         <View>
           <Text>Award Name</Text>
@@ -1287,29 +1300,30 @@ const GraduateTracerSurvey = () => {
             
           </View>
 
-          {/* <Text>Certificate</Text>
+          <Text>Certificate</Text>
           <TouchableOpacity style={styles.fileButton} onPress={handleSelectImage}>
             <FontAwesomeIcon icon={faImage} size={18} color="#000" />
             <Text style={styles.fileButtonText}>Add Photo</Text>
           </TouchableOpacity>
+          {console.log("SELECTED FILES: ", selectedImage)}
           <View style={styles.filePreviewContainer}>
-            {selectedFiles.map((file, index) => (
-              <View key={index} style={styles.previewContainer}>
-                {file.type === 'success' ? (
-                  <Text>{file.name}</Text>
-                ) : (
-                  <Image source={{ uri: file.uri }} style={styles.previewImage} />
-                )}
+            
+            {selectedImage != "" && (
+              <View style={styles.previewContainer}>
+                
+                <Image source={{ uri: selectedImage.uri }} style={styles.previewImage} />
                 <TouchableOpacity
                   style={styles.removeFileButton}
-                  onPress={() => handleRemoveFile(file.uri)}
+                  onPress={() => handleRemoveFile(selectedImage.uri)}
                 >
                   <FontAwesomeIcon icon={faX} color="#fff" />
                 </TouchableOpacity>
               </View>
-            ))}
+            )}
           </View>
- */}
+
+
+
           <TouchableOpacity style={styles.button} onPress={handleSubmitContribution} disabled={isLoading}>
             {isLoading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.buttonText}>Submit</Text>}
           </TouchableOpacity>
@@ -1324,7 +1338,37 @@ const styles = StyleSheet.create({
   linearGradient: {
     flex: 1,
   },
-  
+  filePreviewContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 10,
+    justifyContent: 'flex-start',
+  },
+  previewContainer: {
+    position: 'relative',
+    margin: 5,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewImage: {
+    width: 100,
+    height: 100,
+    resizeMode: 'cover',
+  },
+  removeFileButton: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: '#f00',
+    borderRadius: 15,
+    padding: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   
   logo: {
     width: 100,
@@ -1367,7 +1411,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   button: {
-    backgroundColor: '#1c1c1e',
+    backgroundColor: '#7f1d1d',
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',

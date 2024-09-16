@@ -7,13 +7,14 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCalendarPlus, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { useNavigation } from '@react-navigation/native'; // Import useNavigation for navigation
+import { Picker } from '@react-native-picker/picker';
 
 function Signup() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [birthday, setBirthday] = useState("");
   const [graduationyear, setGradyear] = useState("");
-  const [program, setProgram] = useState("");
+  const [program, setProgram] = useState("#");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -42,12 +43,14 @@ function Signup() {
     }
   
     try {
+      const trimmedProgram = program.trim();
+
       const response = await api.post('/signup', {
         name,
         address,
         birthday,
         graduationyear,
-        program,
+        program: trimmedProgram,
         email,
         password
       }, { withCredentials: true });
@@ -179,13 +182,11 @@ function Signup() {
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Program <Text style={styles.asterisk}>*</Text></Text>
-              <TextInput
-                style={styles.input}
-                value={program}
-                onChangeText={(text) => setProgram(text)}
-                placeholder='e.g. BS Computer Science'
-                required
-              />
+              <Picker style={styles.input} selectedValue={program} onValueChange={setProgram}>
+                <Picker.Item label="Select" value="#" />
+                <Picker.Item label="BS Computer Science" value="BS Computer Science" />
+                <Picker.Item label="BS Information Technology" value="BS Information Technology" />
+              </Picker>
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email <Text style={styles.asterisk}>*</Text></Text>

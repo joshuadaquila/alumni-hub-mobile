@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faCalendarCheck, faCalendarDay, faCalendarXmark, faCheck, faClock, faLocationPin, faUserCheck } from '@fortawesome/free-solid-svg-icons';
+import { faCalendarCheck, faCalendarDay, faCalendarXmark, faCancel, faCheck, faClock, faLocationPin, faUserCheck } from '@fortawesome/free-solid-svg-icons';
 import { faStar } from '@fortawesome/free-regular-svg-icons';
 import eventcover from "../resources/eventcover.jpg"; // Ensure this is a valid path
 import axios from 'axios';
@@ -107,7 +107,7 @@ function EventCard(props) {
               <ActivityIndicator color="#fff" />
             ) : (
               <>
-                <FontAwesomeIcon icon={registered ? faCheck : faStar} color='white' />
+                <FontAwesomeIcon icon={isPastEvent? faCancel : (registered ? faCheck : faStar)} color='white' />
                 <Text style={styles.buttonText}>
                   {isPastEvent ? "EVENT PASSED" : (registered ? "REGISTERED" : "REGISTER")}
                 </Text>
@@ -122,10 +122,9 @@ function EventCard(props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(255, 165, 0, 0.2)',
+    // backgroundColor: 'rgba(255, 165, 0, 0.2)',
     margin: 10,
     borderWidth: 1,
-    borderColor: 'white',
     borderRadius: 10,
     overflow: 'hidden',
     flexDirection: 'column',
@@ -164,7 +163,7 @@ const styles = StyleSheet.create({
     padding: 5,
     margin: 2,
     borderRadius: 5,
-    width: "45%", // Adjust width as needed
+    width: "50%", // Adjust width as needed
   },
   description: {
     marginTop: 10,
@@ -179,7 +178,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   joinButton: {
-    backgroundColor: '#1c1c1e',
+    backgroundColor: '#7f1d1d',
   },
   registeredButton: {
     backgroundColor: '#228B22',

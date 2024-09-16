@@ -69,12 +69,12 @@ const Sidebar = ({ isOpen, onClose }) => {
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('ReportBug')}>
             <FontAwesomeIcon icon={faBug} color='white' size={20} />
-            <Text style={styles.sidebarText}>Report a bug (Unavailable)</Text>
+            <Text style={styles.sidebarText}>Report a bug (Soon)</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('About')}>
             <FontAwesomeIcon icon={faInfo} color='white' size={20} />
-            <Text style={styles.sidebarText}>About (Unavailable)</Text>
+            <Text style={styles.sidebarText}>About (Soon)</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => logout()}>
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    backgroundColor: '#1c1c1e',
+    backgroundColor: '#7f1d1d',
     padding: 20,
     justifyContent: 'space-between',
     zIndex: 1000,

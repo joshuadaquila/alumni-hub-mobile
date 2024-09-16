@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, TextInput, ActivityIndicator, Modal, Dimensions } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import api from './api/api';
+import { faPaperPlane } from '@fortawesome/free-regular-svg-icons';
 
 export default function FeedContainer({ feedid, profilepicurl, username, content: initialContent, alumniid, datestamp, photourl, onDelete }) {
   const [likes, setLikes] = useState(0);
@@ -230,8 +231,8 @@ export default function FeedContainer({ feedid, profilepicurl, username, content
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Text style={styles.sendButtonText}>Add</Text>
-              <FontAwesomeIcon icon={faPlus} color='white' />
+              {/* <Text style={styles.sendButtonText}>Add</Text> */}
+              <FontAwesomeIcon icon={faPaperPlane} color='white' />
             </>
           )}
         </TouchableOpacity>
@@ -309,11 +310,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   photosContainer: {
+    height: 'auto',
+    width: 'auto',
     marginTop: 8,
   },
   photo: {
-    width: '100%',
-    height: 200,
+    width: 'auto',
+    height: 500,
     marginBottom: 8,
   },
   profilePic: {
@@ -374,7 +377,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   sendButton: {
-    backgroundColor: '#1c1c1e',
+    backgroundColor: '#7f1d1d',
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
@@ -410,6 +413,7 @@ const styles = StyleSheet.create({
     top: 20,
     right: 20,
     borderRadius: 50,
+    zIndex: 99,
     // padding: 10,
   },
   modalCloseText: {
@@ -419,7 +423,7 @@ const styles = StyleSheet.create({
   },
   modalImage: {
     width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height / 2,
+    height: Dimensions.get('window').height ,
     resizeMode: 'contain',
   },
 });

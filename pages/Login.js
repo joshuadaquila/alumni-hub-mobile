@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, BackHandler, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import ualogo from '../resources/ualogo.jpg';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -18,6 +18,29 @@ const Login = ({ handleLogin, navigation, error }) => {
   useEffect(() => {
     setLoginError(error); // Update local loginError state when error prop changes
   }, [error]);
+
+  useEffect(() => {
+    // Handle the back button press
+    const backAction = () => {
+      // Show an alert or perform any action before exiting the app
+      Alert.alert('Exit App', 'Are you sure you want to exit?', [
+        {
+          text: 'Cancel',
+          onPress: () => null,
+          style: 'cancel',
+        },
+        {
+          text: 'Yes',
+          onPress: () => BackHandler.exitApp(), // Exit the app
+        },
+      ]);
+      return true; // Prevent the default back action
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove();
+  }, []);
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -44,7 +67,6 @@ const Login = ({ handleLogin, navigation, error }) => {
 
   return (
     <View style={styles.container}>
-      {console.log(loginError)}
       <LinearGradient
         colors={['white','white']}
         start={[0, 0]}

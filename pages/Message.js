@@ -105,18 +105,6 @@ function Message() {
   const sendNotification = (title) => {
     const type = "message";
     const message = `New Message: ${title}`;
-
-    api.post('/addNotification', {
-      title,
-      message,
-      type
-    })
-    .then(response => {
-      console.log('Notification added successfully:', response.data);
-    })
-    .catch(error => {
-      console.error('Error adding notification:', error);
-    });
   };
 
   return (
@@ -163,9 +151,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center', 
-    backgroundColor: '#1c1c1e',
+    backgroundColor: '#7f1d1d',
     height: 40,
-    width: 40,
+    width: 60,
     borderRadius: 2,
   },
   noMessagesText: {

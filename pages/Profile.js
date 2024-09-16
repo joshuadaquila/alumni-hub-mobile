@@ -6,7 +6,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import api from '../components/api/api'; // Ensure the API file exists and has the correct endpoint
 import FeedContainer from '../components/FeedCon';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faUpload, faEye  } from '@fortawesome/free-solid-svg-icons';
+import { faUpload, faEye } from '@fortawesome/free-solid-svg-icons';
 
 function Profile() {
   const [token, setToken] = useState('');
@@ -21,7 +21,7 @@ function Profile() {
   const [optionsVisible, setOptionsVisible] = useState(false); // State for options visibility
   const [isModalVisible, setModalVisible] = useState(false); // State for modal visibility
   const [uploading, setUploading] = useState(false);
-  const [job, setJob] = useState('')
+  const [job, setJob] = useState('');
 
   useEffect(() => {
     async function getToken() {
@@ -49,10 +49,10 @@ function Profile() {
   }, []);
 
   useEffect(() => {
-    // Fetch profile information from the server
+    // Fetch job information from the server
     api.get('/getJobInfo')
       .then(response => {
-        console.log("JOBINFO", response);
+        // console.log("JOBINFO", response);
         setJob(response.data[0].presentoccupation);
       })
       .catch(error => {
@@ -64,7 +64,6 @@ function Profile() {
   useEffect(() => {
     api.get('/getMyFeed')
       .then(response => {
-        // console.log(response.data);
         setFeed(response.data);
       })
       .catch(error => {
@@ -84,15 +83,12 @@ function Profile() {
   };
 
   const pickImage = async () => {
-    // console.log("PICKING IMAGE")
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
     });
-  
-    console.log("Image Picker Result:", result);
   
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const { uri } = result.assets[0]; // Access the URI from the first asset
@@ -102,12 +98,6 @@ function Profile() {
   
       const formData = new FormData();
       formData.append('photo', {
-        uri: uri,
-        name: 'profile.jpg',
-        type: 'image/jpeg',
-      });
-  
-      console.log('Photo:', {
         uri: uri,
         name: 'profile.jpg',
         type: 'image/jpeg',
@@ -123,7 +113,7 @@ function Profile() {
   
         if (response.status === 200) {
           setNotification('Profile photo updated successfully');
-          setUploading(false)
+          setUploading(false);
         } else {
           setNotification('Failed to update profile photo');
         }
@@ -135,8 +125,6 @@ function Profile() {
       console.error('No image selected or image URI is undefined.');
     }
   };
-  
-  
 
   const viewImage = () => {
     setModalVisible(true);
@@ -165,7 +153,6 @@ function Profile() {
   }
 
   const handleDeleteFeed = async (feedid) => {
-    // console.log('Attempting to delete feed with ID:', feedid);
     Alert.alert(
       'Confirm Delete',
       'Are you sure you want to delete this post?',
@@ -210,29 +197,31 @@ function Profile() {
     );
   };
 
+  // console.log(data);
+
   return (
     <View style={styles.container}>
       <View style={styles.profileHeader}>
-      <TouchableOpacity
-  onPress={() => setOptionsVisible(!optionsVisible)}
-  onPressIn={() => setShowIcon(true)}
-  onPressOut={() => setShowIcon(false)}
->
-  <View style={styles.profileImageContainer}>
-    <Image 
-      source={{ uri: profileImage }}
-      style={styles.profileImage}
-    />
-    {uploading && (
-      <View style={styles.indicatorWrapper}>
-        <ActivityIndicator size="large" color="#1c1c1e" />
-      </View>
-    )}
-  </View>
-    </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setOptionsVisible(!optionsVisible)}
+          onPressIn={() => setShowIcon(true)}
+          onPressOut={() => setShowIcon(false)}
+        >
+          <View style={styles.profileImageContainer}>
+            <Image 
+              source={{ uri: profileImage }}
+              style={styles.profileImage}
+            />
+            {uploading && (
+              <View style={styles.indicatorWrapper}>
+                <ActivityIndicator size="large" color="#1c1c1e" />
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{data[0].name}</Text>
-          <Text style={styles.profileJob}>{job? job : null }</Text>
+          <Text style={styles.profileJob}>{job ? job : 'Occupation is Not Available'}</Text>
           <Text style={styles.profileJob}>Class {data[0].graduationyear}</Text>
         </View>
       </View>
@@ -265,30 +254,29 @@ function Profile() {
           <Text style={styles.detailsText}>{formatDate(data[0].birthday)}</Text>
         </View>
       </Animated.View>
-
       <FlatList
         data={feed}
         renderItem={renderItem}
-        keyExtractor={item => `feed-${item.feedid}`}
-        contentContainerStyle={styles.flatListContent}
+        keyExtractor={item => item.feedid.toString()}
+        ListEmptyComponent={<Text style={styles.noPostsText}>No Post Available</Text>}
       />
-
-      {/* Modal for viewing image */}
-      <Modal
-        visible={isModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <Pressable style={styles.modalBackground} onPress={() => setModalVisible(false)}>
-          <View style={styles.modalContent}>
-            <Image 
-              source={{ uri: profileImage }}
-              style={styles.fullscreenImage}
-            />
-          </View>
-        </Pressable>
-      </Modal>
+      {isModalVisible && (
+        <Modal
+          transparent={true}
+          visible={isModalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
+            <Text style={{marginBottom: 10, color: 'white'}}>Tap to Close</Text>
+            <Pressable style={styles.modalContent}>
+              <Image
+                source={{ uri: profileImage }}
+                style={styles.modalImage}
+              />
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -296,15 +284,84 @@ function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   profileImageContainer: {
+    position: 'relative',
+  },
+  profileImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginRight: 16,
+  },
+  indicatorWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  profileInfo: {
+    marginLeft: 20,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  profileJob: {
+    fontSize: 16,
+    color: '#777',
+  },
+  optionsContainer: {
+    marginTop: 10,
+    position: 'absolute',
+    top: 95,
+    left: 15,
+    paddingLeft: 15,
+    paddingRight: 15,
+    borderRadius: 5,
+    elevation: 5,
+    backgroundColor: 'white',
+    zIndex: 999,
+  },
+  optionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  optionText: {
+    marginLeft: 10,
+    fontSize: 16,
+  },
+  expandButton: {
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  expandButtonText: {
+    fontSize: 16,
+    color: '#007bff',
+  },
+  detailsContainer: {
+    overflow: 'hidden',
+    marginTop: 10,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+  },
+  icon: {
+    marginRight: 10,
+  },
+  detailsText: {
+    fontSize: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -312,127 +369,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    fontSize: 18,
+    fontSize: 16,
     color: 'red',
   },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginRight: 16,
-  },
-  iconContainer: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  profileJob: {
+  noPostsText: {
+    textAlign: 'center',
     fontSize: 16,
-    color: '#555',
+    color: '#777',
   },
-  optionsContainer: {
-    position: 'absolute',
-    width: 150,
-    top: 100,
-    left: 5,
-    right: 0,
-    alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 2,
-    borderRadius: 5,
-    zIndex: 1, // Ensures the options container is above other elements
-  },
-  optionButton: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'start',
-    borderRadius: 5,
-    marginVertical: 5,
-    width: '80%',
-    alignItems: 'center',
-  },
-  optionText: {
-    color: 'black',
-    fontSize: 14,
-    marginLeft: 10,
-  },
-  expandButton: {
-    padding: 10,
-    backgroundColor: '#1c1c1e',
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  expandButtonText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-  detailsContainer: {
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 16,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  detailsText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  icon: {
-    marginRight: 8,
-  },
-  flatListContent: {
-    paddingBottom: 16,
-  },
-  modalBackground: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 1)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    // backgroundColor: '#fff',
+    // padding: 20,
+    // borderRadius: 10,
+    alignItems: 'center',
   },
-  fullscreenImage: {
+  modalImage: {
     width: 400,
     height: 400,
-    resizeMode: 'contain',
-  },
-  indicatorWrapper: {
-    position: 'absolute',
-    left: -8,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(100, 100, 100, 0.6)',
-    borderRadius: 50,
-    width: 100,
-    height: 100,
+    // borderRadius: 10,
   },
 });
 

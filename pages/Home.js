@@ -25,6 +25,7 @@ function Home({ navigation, handleLogout, handleTabPress }) {
   const [containerOpacity, setContainerOpacity] = useState(new Animated.Value(0));
   const [loading, setLoading] = useState(true); // Added loading state
   const [socket, setSocket] = useState(null);
+  const [isPosting, setPosting] = useState(false);
 
   const SOCKET_URL = 'https://ua-alumhi-hub-be.onrender.com'; // Replace with your server URL
 
@@ -102,6 +103,7 @@ function Home({ navigation, handleLogout, handleTabPress }) {
   }, [notification]);
 
   const handleCreatePost = async () => {
+    setPosting(true);
     if (newPost.trim() === '') {
       Alert.alert('Error', 'Post content cannot be empty.');
       return;
@@ -161,6 +163,7 @@ function Home({ navigation, handleLogout, handleTabPress }) {
           socket.emit('feedNotification', response.data);
           Alert.alert('Success', 'Post created successfully.');
           setNewPost('');
+          setPosting(false);
           setSelectedImages([]);
           setNotification(response.data);
           toggleCollapse(); // Collapse the container after posting
@@ -180,8 +183,8 @@ function Home({ navigation, handleLogout, handleTabPress }) {
     if (permission.granted) {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
+        // allowsEditing: true,
+        // aspect: [4, 3],
         quality: 1,
       });
       if (!result.canceled) {
@@ -319,7 +322,17 @@ function Home({ navigation, handleLogout, handleTabPress }) {
                 </View>
               ))}
             </View>
-            <Button title="Post" onPress={handleCreatePost} color={"#1c1c1e"} />
+            <TouchableOpacity
+              onPress={handleCreatePost}
+              style={styles.button}
+              disabled={isPosting}  // Disable the button when posting
+            >
+              {isPosting ? (
+                <ActivityIndicator color={"white"} />
+              ) : (
+                <Text style={styles.buttonText}>Post</Text>
+              )}
+            </TouchableOpacity>
           </View>
         </Animated.View>
         <FlatList
@@ -363,6 +376,15 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     padding: 15,
     borderRadius: 15,
+  },
+  button:{
+    backgroundColor: '#7f1d1d',
+    padding: 10,
+    borderRadius: 25,
+  },
+  buttonText:{
+    color: 'white',
+    textAlign: 'center',
   },
   icon: {
     marginRight: 8,
@@ -408,7 +430,7 @@ const styles = StyleSheet.create({
   imagePreviewContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 10,
+    marginBottom: 3,
   },
   previewContainer: {
     position: 'relative',

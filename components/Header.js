@@ -1,7 +1,7 @@
 import { faBars, faBell, faCalendar, faHome, faMessage, faUserAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import Home from '../pages/Home';
 import Signup from '../pages/Signup';
 import Events from '../pages/Events';
@@ -161,6 +161,9 @@ const Header = () => {
       end={[1, 1]}
       style={styles.linearGradient}
     >
+      {/* Add the StatusBar component */}
+      <StatusBar barStyle="dark-content" hidden={false} backgroundColor="#f2f2f2" />
+      
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <View style={styles.container}>
         <View style={styles.titleCon}>
@@ -201,6 +204,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     borderBottomWidth: 2,
+    borderBottomColor: '#7f1d1d',
     backgroundColor: '#f2f2f2',
   },
   headerCon: {
@@ -209,7 +213,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   headerIcon: {
-    color: "#1c1c1e",
+    color: "#7f1d1d",
     marginHorizontal: 5,
   },
   titleCon: {
@@ -217,7 +221,7 @@ const styles = StyleSheet.create({
     alignItems: 'start',
   },
   headerTitle: {
-    color: "#1c1c1e",
+    color: "#7f1d1d",
     fontSize: 20,
     fontWeight: 'bold',
   },
