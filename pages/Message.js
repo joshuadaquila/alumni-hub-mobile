@@ -17,6 +17,7 @@ function Message() {
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [socket, setSocket] = useState(null);
+  const [subId, setSubId] = useState();
 
   useEffect(() => {
     async function getToken() {
@@ -25,6 +26,21 @@ function Message() {
     }
     getToken();
   }, []);
+
+  useEffect(() => {
+    async function getSubId() {
+      try {
+        const token = await SecureStore.getItemAsync('subId');
+        setSubId(token);
+        console.log("Retrieved SubId:", token); // Log the token directly
+      } catch (error) {
+        console.error("Error retrieving SubId:", error);
+      }
+    }
+    getSubId();
+  }, []);
+
+  
 
   useEffect(() => {
     const newSocket = io(SOCKET_URL, {
@@ -79,7 +95,13 @@ function Message() {
     api.post('/addUserMessage', messageData)
       .then(response => {
         setSending(false);
-        socket.emit('messageNotification', response.data);
+
+        const dataToEmit = {
+          ...response.data,
+          subId: subId,
+        };
+
+        socket.emit('messageNotification', dataToEmit);
         sendNotification(messageData.content);
         setNewMessage('');
       })

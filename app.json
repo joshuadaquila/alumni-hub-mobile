@@ -12,7 +12,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.alumnihub.app" 
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +22,7 @@
       },
       "package": "com.xynyz.frontend",
       "statusBar": {
-        "backgroundColor": "#ffffff", 
+        "backgroundColor": "#ffffff",
         "barStyle": "light-content"
       }
     },
@@ -35,10 +36,17 @@
     "extra": {
       "eas": {
         "projectId": "12c5ac25-9b33-44f7-859e-01f45a0796d5"
-      }
+      },
+      "oneSignalAppId": "9649e634-24e7-4692-bb25-c0fe5d33ce63"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "production"
+        }
+      ]
     ]
   }
 }

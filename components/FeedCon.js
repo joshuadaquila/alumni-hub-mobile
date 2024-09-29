@@ -5,8 +5,9 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, TextInput, Acti
 import * as SecureStore from 'expo-secure-store';
 import api from './api/api';
 import { faPaperPlane } from '@fortawesome/free-regular-svg-icons';
+import { useNavigation } from '@react-navigation/native';
 
-export default function FeedContainer({ feedid, profilepicurl, username, content: initialContent, alumniid, datestamp, photourl, onDelete }) {
+export default function FeedContainer({ profile, feedid, profilepicurl, username, content: initialContent, alumniid, datestamp, photourl, onDelete, navigation }) {
   const [likes, setLikes] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
   const [comment, setComment] = useState('');
@@ -22,6 +23,9 @@ export default function FeedContainer({ feedid, profilepicurl, username, content
   const [modalVisible, setModalVisible] = useState(false); // Modal visibility state
   const [selectedPhoto, setSelectedPhoto] = useState(''); // Currently selected photo URL
 
+  // const navigation = useNavigation();
+  // console.log("ALUMID", alumniid)
+
   useEffect(() => {
     async function getToken() {
       const uname = await SecureStore.getItemAsync('uName');
@@ -36,7 +40,7 @@ export default function FeedContainer({ feedid, profilepicurl, username, content
     try {
       const response = await api.get(`/getComments/${feedid}`);
       setComments(response.data);
-      // console.log(comments);
+      // console.log(response.data);
     } catch (error) {
       console.error('Error fetching comments:', error);
       // Alert.alert('Failed to fetch comments. Please try again.');
@@ -132,12 +136,19 @@ export default function FeedContainer({ feedid, profilepicurl, username, content
 
   return (
     <View style={styles.container}>
-      <View style={styles.postHeader}>
-        <Image source={{ uri: profilepicurl }} style={styles.profilePic} />
-        <View>
-          <Text style={styles.feedId}>{username}</Text>
-          <Text style={styles.date}>{new Date(datestamp).toLocaleString()}</Text>
-        </View>
+      <View>
+        {/* {console.log(alumniid)} */}
+        <TouchableOpacity 
+          onPress={() => profile ? null : navigation.navigate('ProfileView', { alumniid })} 
+          style={styles.postHeader}
+        >
+          <Image source={{ uri: profilepicurl }} style={styles.profilePic} />
+          <View>
+            <Text style={styles.feedId}>{username}</Text>
+            <Text style={styles.date}>{new Date(datestamp).toLocaleString()}</Text>
+          </View>
+        </TouchableOpacity>
+        
         {uName === username && (
           <TouchableOpacity style={styles.options} onPress={() => setShowOptions(!showOptions)}>
             <FontAwesomeIcon icon={faEllipsisH} />
@@ -205,7 +216,7 @@ export default function FeedContainer({ feedid, profilepicurl, username, content
           <View key={index} style={{flexDirection: 'row', alignItems: 'flex-start'}}>
             <Image source={{ uri: commentObj.photourl }} style={{width: 40, height: 40, borderRadius: 20, marginRight: 4,}} />
             <View style={styles.commentContainer}>
-              <Text style={styles.feedId}>{commentObj.name}</Text>
+              <Text style={styles.feedId} onPress={()=> profile ? null : navigation.navigate('ProfileView', {alumniid: commentObj.alumniid})}>{commentObj.name}</Text>
               <Text style={styles.comment}>{commentObj.content}</Text>
               <Text style={styles.timestamp}>{new Date(commentObj.date).toLocaleString()}</Text>
             </View>
@@ -265,7 +276,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
-    margin: 5,
+    margin: 3,
   },
   options: {
     position: 'absolute',

@@ -8,7 +8,7 @@ import FeedContainer from '../components/FeedCon';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faUpload, faEye } from '@fortawesome/free-solid-svg-icons';
 
-function Profile() {
+function ProfileView({ route, navigation }) {
   const [token, setToken] = useState('');
   const [feed, setFeed] = useState([]);
   const [data, setData] = useState(null);
@@ -23,6 +23,10 @@ function Profile() {
   const [uploading, setUploading] = useState(false);
   const [job, setJob] = useState('');
 
+  const { alumniid } = route.params;
+
+  // console.log("alumniid", alumniid);
+
   useEffect(() => {
     async function getToken() {
       const token = await SecureStore.getItemAsync('token');
@@ -33,7 +37,7 @@ function Profile() {
 
   useEffect(() => {
     // Fetch profile information from the server
-    api.get('/getAlumniInfo')
+    api.get(`/getAlumniInfo/${alumniid}`)
       .then(response => {
         setData(response.data);
         if (response.data && response.data[0] && response.data[0].photourl) {
@@ -50,7 +54,7 @@ function Profile() {
 
   useEffect(() => {
     // Fetch job information from the server
-    api.get('/getJobInfo')
+    api.get(`/getJobInfo/${alumniid}`)
       .then(response => {
         // console.log("JOBINFO", response);
         setJob(response.data[0].presentoccupation);
@@ -62,7 +66,7 @@ function Profile() {
   }, []);
 
   useEffect(() => {
-    api.get('/getMyFeed')
+    api.get(`/getMyFeed/${alumniid}`)
       .then(response => {
         setFeed(response.data);
       })
@@ -193,7 +197,7 @@ function Profile() {
         username={item.name}
         profilepicurl={item.profilepic}
         onDelete={handleDeleteFeed}
-        profile={true}
+        navigation={navigation}
       />
     );
   };
@@ -205,7 +209,7 @@ function Profile() {
       <View style={{padding: 15}}>
       <View style={styles.profileHeader}>
         <TouchableOpacity
-          onPress={() => setOptionsVisible(!optionsVisible)}
+          onPress={() => setOptionsVisible(viewImage)}
           onPressIn={() => setShowIcon(true)}
           onPressOut={() => setShowIcon(false)}
         >
@@ -227,7 +231,7 @@ function Profile() {
           <Text style={styles.profileJob}>Class {data[0].graduationyear}</Text>
         </View>
       </View>
-      {optionsVisible && (
+      {/* {optionsVisible && (
         <View style={styles.optionsContainer}>
           <TouchableOpacity style={styles.optionButton} onPress={viewImage}>
             <FontAwesomeIcon icon={faEye} />
@@ -238,7 +242,7 @@ function Profile() {
             <Text style={styles.optionText}>Upload Photo</Text>
           </TouchableOpacity>
         </View>
-      )}
+      )} */}
       <TouchableOpacity style={styles.expandButton} onPress={toggleExpand}>
         <Text style={styles.expandButtonText}>{isExpanded ? 'Hide' : 'See More'}</Text>
       </TouchableOpacity>
@@ -287,7 +291,7 @@ function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // padding: 15,
+    // padding: 10,
     backgroundColor: '#fff',
   },
   profileHeader: {
@@ -399,4 +403,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Profile;
+export default ProfileView;

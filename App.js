@@ -11,8 +11,14 @@ import Header from './components/Header';
 import Events from './pages/Events';
 import api, { loginUser, logoutUser } from './components/api/api';
 import GraduateTracerSurvey from './pages/GraduateTracerSurvey';
+import { LogLevel, OneSignal } from 'react-native-onesignal';
+import Constants from "expo-constants";
+import ProfileView from './pages/ProfileView';
+import Profile from './pages/Profile';
 
 const Stack = createStackNavigator();
+
+
 
 function App() {
   const [token, setToken] = useState(null);
@@ -20,6 +26,37 @@ function App() {
   const [loginErr, setLoginErr] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(true);
+  
+  OneSignal.Debug.setLogLevel(LogLevel.Verbose);
+  OneSignal.initialize(Constants.expoConfig.extra.oneSignalAppId);
+
+  // Also need enable notifications to complete OneSignal setup
+  OneSignal.Notifications.requestPermission(true);
+
+  useEffect(() => {
+    const getPushSubscriptionInfo = async () => {
+      try {
+        // Retrieve push subscription ID
+        const pushSubscriptionId = await OneSignal.User.pushSubscription.getIdAsync();
+  
+        if (pushSubscriptionId) {
+          // Store the subscription ID securely
+          await SecureStore.setItemAsync('subId', pushSubscriptionId);
+          console.log("Push Subscription ID stored successfully ", pushSubscriptionId);
+  
+          // Make POST request to /setSubId with the pushSubscriptionId
+          await api.post('/setSubId', { subId: pushSubscriptionId });
+          console.log("Push Subscription ID posted successfully");
+        }
+      } catch (error) {
+        console.error("Error retrieving or posting push subscription info:", error);
+      }
+    };
+  
+    // Call the function to get the push subscription info and post it
+    getPushSubscriptionInfo();
+  }, []); // Empty dependency array means this effect runs once on mount
+  
 
   useEffect(() => {
     const loadToken = async () => {
@@ -143,6 +180,21 @@ function App() {
         <Stack.Screen name="Profile">
           {(props) => (
             <Profile
+              {...props}
+              uName={uName}
+              handleLogout={logout}
+              options={{
+                headerShown: token ? true : false,
+                headerRight: () => (
+                  <Button title="Logout" onPress={logout} />
+                ),
+              }}
+            />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="ProfileView">
+          {(props) => (
+            <ProfileView
               {...props}
               uName={uName}
               handleLogout={logout}

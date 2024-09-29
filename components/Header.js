@@ -15,7 +15,7 @@ import api from './api/api';
 
 const SOCKET_URL = 'https://ua-alumhi-hub-be.onrender.com'; // Replace with your server URL
 
-const Header = () => {
+const Header = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [token, setToken] = useState();
@@ -138,7 +138,7 @@ const Header = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <Home key={tabRefresh.home} />;
+        return <Home key={tabRefresh.home} navigation={navigation} />;
       case 'signup':
         return <Signup key={tabRefresh.signup} />;
       case 'events':
@@ -150,7 +150,7 @@ const Header = () => {
       case 'profile':
         return <Profile key={tabRefresh.profile} />;
       default:
-        return <Home key={tabRefresh.home} />;
+        return <Home key={tabRefresh.home} navigation={navigation}/>;
     }
   };
 

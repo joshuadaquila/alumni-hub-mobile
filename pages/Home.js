@@ -93,6 +93,7 @@ function Home({ navigation, handleLogout, handleTabPress }) {
       try {
         const response = await api.get('/getFeed');
         setFeed(response.data);
+        // console.log("ALUMNIID", response.data[0].alumniid);
       } catch (error) {
         console.log("Error fetching feed with api:", error);
         handleLogout();
@@ -251,6 +252,7 @@ function Home({ navigation, handleLogout, handleTabPress }) {
   };
 
   const renderItem = ({ item }) => {
+    // console.log("item", item);
     return (
       <FeedContainer
         feedid={item.feedid}
@@ -261,6 +263,7 @@ function Home({ navigation, handleLogout, handleTabPress }) {
         username={item.name}
         profilepicurl={item.profilepic}
         onDelete={handleDeleteFeed}
+        navigation={navigation}
       />
     );
   };
